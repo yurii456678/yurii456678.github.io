@@ -20,6 +20,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <div id="map"></div>
@@ -32,28 +33,28 @@
   });
 
   // Межі карти
-  const bounds = [[0, 0], [8192, 8192]];
+  const bounds = [[0,0],[8192,8192]];
 
   // Фонова карта
   L.imageOverlay(
-'https://raw.githubusercontent.com/Maps-RDR2/rdr2-map/main/map.jpg'
+    'https://raw.githubusercontent.com/Maps-RDR2/rdr2-map/main/map.jpg',
     bounds
   ).addTo(map);
 
   map.fitBounds(bounds);
 
   // Іконка повозки
-  const iconWagon = L.icon({
+  const wagonIcon = L.icon({
     iconUrl: 'https://cdn-icons-png.flaticon.com/512/743/743922.png',
     iconSize: [32, 32]
   });
 
-  // Повозка на карті
-  L.marker([4000, 4000], { icon: iconWagon })
+  // Повозка
+  L.marker([4000, 4000], { icon: wagonIcon })
     .addTo(map)
     .bindPopup("Повозка<br>Ціна: 100$");
 
-  // Клік по карті (для визначення координат)
+  // Клік по карті (координати)
   map.on('click', function(e) {
     alert("Координати: " + e.latlng.lat + ", " + e.latlng.lng);
   });
