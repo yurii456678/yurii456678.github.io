@@ -2,180 +2,478 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RDR2 — Повозки</title>
 
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    body { margin:0; }
-    #map { height:100vh; background:#000; }
+    body { margin:0; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    #map { height:100vh; width:100vw; background:#000; }
 
-    /* Карточка (попап) */
-    .card {
-      width: 360px;
-      border-radius: 18px;
-      overflow: hidden;
-      background: rgba(40, 28, 16, 0.92);
-      color: #f4e7cf;
-      box-shadow: 0 12px 30px rgba(0,0,0,.35);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    }
-    .cardTop { position: relative; height: 200px; background: #1b130b; }
-    .cardImg { width: 100%; height: 100%; object-fit: cover; display:block; }
-
-    .cardNavBtn {
-      position:absolute; top: 50%; transform: translateY(-50%);
-      width: 42px; height: 42px; border-radius: 50%;
-      border: 0; cursor: pointer;
-      background: rgba(0,0,0,.35); color: #fff;
-      font-size: 22px; line-height: 42px;
-    }
-    .cardNavBtn:hover { background: rgba(0,0,0,.55); }
-    .leftBtn { left: 10px; }
-    .rightBtn { right: 10px; }
-
-    .cardBody { padding: 14px 14px 16px; }
-    .titleRow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .cardTitle { font-size: 18px; font-weight: 800; }
-    .badge {
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      padding: 6px 10px; border-radius: 999px;
-      font-weight: 700; font-size: 12px; color: #ffe9b9;
-      white-space: nowrap;
-    }
-    .metaRow { margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap; }
-    .pill {
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.10);
-      padding: 8px 10px; border-radius: 12px;
-      font-size: 13px;
-    }
-    .pill b { color:#ffd67a; }
-    .desc { margin-top: 10px; opacity: .9; font-size: 13px; line-height: 1.35; }
-
-    /* Стилі Leaflet popup */
+    /* Popup shell */
     .leaflet-popup-content-wrapper { background: transparent; box-shadow:none; }
     .leaflet-popup-content { margin: 0; }
     .leaflet-popup-tip { background: rgba(40,28,16,.92); }
+
+    /* RDR2-like card */
+    .rdrCard {
+      width: 520px;
+      border-radius: 26px;
+      overflow: hidden;
+      background: rgba(45, 30, 18, 0.92);
+      color: #f3e6cf;
+      box-shadow: 0 26px 70px rgba(0,0,0,.55);
+      position: relative;
+      backdrop-filter: blur(2px);
+    }
+
+    .rdrTop {
+      position: relative;
+      height: 290px;
+      background: #1a110a;
+    }
+
+    .rdrImg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(.95) contrast(1.05);
+    }
+
+    .rdrClose {
+      position:absolute;
+      top: 12px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      color: #fff;
+      background: rgba(0,0,0,.35);
+      font-size: 20px;
+      line-height: 34px;
+    }
+    .rdrClose:hover { background: rgba(0,0,0,.55); }
+
+    .navBtn {
+      position:absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 48px;
+      height: 48px;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #fff;
+      background: rgba(0,0,0,.35);
+      font-size: 24px;
+      line-height: 48px;
+    }
+    .navBtn:hover { background: rgba(0,0,0,.55); }
+    .navLeft { left: 14px; }
+    .navRight { right: 14px; }
+
+    .dotsWrap {
+      position:absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      display:flex;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.25);
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.35);
+    }
+    .dot.active { background: rgba(255,255,255,.9); }
+
+    .rdrBody {
+      padding: 14px 16px 18px;
+      background: linear-gradient(to bottom, rgba(45,30,18,.92), rgba(30,20,12,.92));
+    }
+
+    .titleRow {
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .titleRow .name {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .titleRow .idPill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      font-weight: 800;
+      color: #ffe6b2;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .field {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .field label {
+      display:block;
+      font-size: 12px;
+      opacity: .85;
+      margin-bottom: 6px;
+    }
+    .field input, .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 10px;
+      padding: 10px 10px;
+      color: #f3e6cf;
+      outline: none;
+      font-size: 14px;
+    }
+    .field textarea { resize: vertical; min-height: 68px; }
+
+    .rowFull { grid-column: 1 / -1; }
+
+    .actions {
+      margin-top: 12px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 800;
+      background: rgba(255,255,255,.10);
+      color: #f3e6cf;
+      border: 1px solid rgba(255,255,255,.14);
+    }
+    .btn:hover { background: rgba(255,255,255,.16); }
+
+    .hint {
+      font-size: 12px;
+      opacity: .85;
+      line-height: 1.25;
+    }
+
+    /* responsive */
+    @media (max-width: 620px){
+      .rdrCard { width: 92vw; }
+      .rdrTop { height: 220px; }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 <div id="map"></div>
 
 <script>
-  // ====== A) РОЗМІР ТВОЄЇ КАРТИНКИ map.jpg ======
-  // Впиши реальний розмір map.jpg (ширина і висота)
-  const MAP_WIDTH  = 3840;  // <-- ЗМІНИ, якщо інше
-  const MAP_HEIGHT = 2160;  // <-- ЗМІНИ, якщо інше
+  // =========================
+  // 1) РОЗМІР КАРТИНКИ map.jpg
+  // =========================
+  // Якщо карта не повністю влазить/розтягується — скажи розмір map.jpg і я підкажу точні числа.
+  const MAP_WIDTH  = 8192;
+  const MAP_HEIGHT = 8192;
 
-  // ====== B) КАРТА (одна картинка, CRS.Simple) ======
+  // =========================
+  // 2) MAP INIT
+  // =========================
   const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2 });
-
-  // Межі: [y,x] тобто [[верх,ліворуч],[низ,праворуч]]
   const bounds = [[0,0],[MAP_HEIGHT, MAP_WIDTH]];
-
-  // Фонова картинка з репозиторію
   L.imageOverlay('map.jpg', bounds).addTo(map);
   map.fitBounds(bounds);
   map.setMaxBounds(bounds);
 
-  // ====== C) ІКОНКА ПОВОЗКИ (твоя) ======
+  // =========================
+  // 3) ICON (твій wagon.jpg)
+  // =========================
   const wagonIcon = L.icon({
-    iconUrl: 'images/wagon.png',
-    iconSize: [48, 32],
-    iconAnchor: [24, 32],
-    popupAnchor: [0, -28]
+    iconUrl: 'wagon.jpg',
+    iconSize: [44, 44],
+    iconAnchor: [22, 44],
+    popupAnchor: [0, -38]
   });
 
-  // ====== D) ДАНІ (JSON) — тут ти додаєш повозки ======
-  // lat = Y, lng = X (бо це картинка, не GPS)
-  const wagons = [
-    {
-      id: 1,
-      title: "Повозка #1",
-      price: 100,
-      lat: 900,   // Y
-      lng: 2000,  // X
-      photos: ["images/w1.jpg", "images/w2.jpg"],
-      note: "Опис (за бажанням)."
-    },
-    {
-      id: 2,
-      title: "Повозка #2",
-      price: 250,
-      lat: 1100,
-      lng: 2400,
-      photos: ["images/w1.jpg"],
-      note: "Ще одна точка."
-    }
-  ];
+  // =========================
+  // 4) STORAGE (збереження позицій/даних)
+  // =========================
+  const STORAGE_KEY = "rdr2_wagons_v1";
 
-  // ====== E) HTML карточки ======
-  function cardHtml(w) {
-    const photos = (w.photos && w.photos.length) ? w.photos : ["images/w1.jpg"];
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) {
+      return null;
+    }
+  }
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  // =========================
+  // 5) 15 ПОВОЗОК (дефолт)
+  // =========================
+  const defaultWagons = Array.from({length: 15}, (_, i) => {
+    const id = i + 1;
+    return {
+      id,
+      name: `Повозка #${id}`,
+      price: 100 + id * 10,          // ціна
+      weight: 200 + id * 5,          // вага
+      seats: 2,                      // місця
+      deliveries: 0,                 // кількість доставок
+      needToBuy: "Гроші + документ", // що потрібно щоб купити
+      note: "Примітка...",
+      // координати (стартові, потім ти перетягуєш)
+      y: 3600 + (i%5)*220,
+      x: 3600 + (Math.floor(i/5))*260,
+      // фото (можеш змінити на свої / або інтернет)
+      photos: [
+        "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=70",
+        "https://images.unsplash.com/photo-1520962917960-0b0d8a8b5b8a?auto=format&fit=crop&w=1200&q=70"
+      ]
+    };
+  });
+
+  // Якщо вже щось зберігалося — беремо звідти
+  const saved = loadState();
+  const wagons = saved?.wagons ?? defaultWagons;
+
+  // =========================
+  // 6) HELPERS
+  // =========================
+  function wagonById(id) {
+    return wagons.find(w => w.id === id);
+  }
+
+  function renderDots(count, activeIndex) {
+    let html = `<div class="dotsWrap">`;
+    for (let i=0;i<count;i++){
+      html += `<div class="dot ${i===activeIndex ? "active":""}"></div>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  function cardHtml(w, photoIndex) {
+    const photos = (w.photos && w.photos.length) ? w.photos : ["wagon.jpg"];
+    const idx = Math.max(0, Math.min(photoIndex ?? 0, photos.length-1));
+
     return `
-      <div class="card" data-idx="0" data-photos='${JSON.stringify(photos)}'>
-        <div class="cardTop">
-          <img class="cardImg" src="${photos[0]}" alt="photo">
-          ${photos.length > 1 ? `<button class="cardNavBtn leftBtn" data-dir="-1">‹</button>` : ``}
-          ${photos.length > 1 ? `<button class="cardNavBtn rightBtn" data-dir="1">›</button>` : ``}
+      <div class="rdrCard" data-id="${w.id}" data-idx="${idx}">
+        <div class="rdrTop">
+          <img class="rdrImg" src="${photos[idx]}" alt="photo">
+
+          <button class="rdrClose" data-action="close">×</button>
+
+          ${photos.length>1 ? `<button class="navBtn navLeft" data-action="prev">‹</button>` : ``}
+          ${photos.length>1 ? `<button class="navBtn navRight" data-action="next">›</button>` : ``}
+
+          ${photos.length>1 ? renderDots(photos.length, idx) : ``}
         </div>
 
-        <div class="cardBody">
+        <div class="rdrBody">
           <div class="titleRow">
-            <div class="cardTitle">${w.title}</div>
-            <div class="badge">#${w.id}</div>
+            <div class="name">${escapeHtml(w.name)}</div>
+            <div class="idPill">#${w.id}</div>
           </div>
 
-          <div class="metaRow">
-            <div class="pill"><b>Ціна:</b> ${w.price}$</div>
-            <div class="pill"><b>X:</b> ${Math.round(w.lng)}</div>
-            <div class="pill"><b>Y:</b> ${Math.round(w.lat)}</div>
+          <div class="grid">
+            <div class="field">
+              <label>Ціна 💰</label>
+              <input type="number" step="1" data-field="price" value="${w.price}">
+            </div>
+
+            <div class="field">
+              <label>Вага ⚖️</label>
+              <input type="number" step="1" data-field="weight" value="${w.weight}">
+            </div>
+
+            <div class="field">
+              <label>Місця 🪑</label>
+              <input type="number" step="1" data-field="seats" value="${w.seats}">
+            </div>
+
+            <div class="field">
+              <label>Доставок 📦</label>
+              <input type="number" step="1" data-field="deliveries" value="${w.deliveries}">
+            </div>
+
+            <div class="field rowFull">
+              <label>Що потрібно, щоб купити ✅</label>
+              <input type="text" data-field="needToBuy" value="${escapeAttr(w.needToBuy)}">
+            </div>
+
+            <div class="field rowFull">
+              <label>Примітка 📝</label>
+              <textarea data-field="note">${escapeHtml(w.note)}</textarea>
+            </div>
+
+            <div class="field rowFull">
+              <label>Фото (через кому) 📷</label>
+              <input type="text" data-field="photos" value="${escapeAttr((w.photos||[]).join(', '))}">
+            </div>
           </div>
 
-          <div class="desc">${w.note || ""}</div>
+          <div class="actions">
+            <button class="btn" data-action="save">💾 Зберегти</button>
+            <button class="btn" data-action="resetPos">↩️ Скинути позицію</button>
+            <div class="hint">
+              ✅ Повозку можна <b>перетягувати</b> по карті.<br>
+              Координати збережуться після оновлення сторінки.
+            </div>
+          </div>
         </div>
       </div>
     `;
   }
 
-  // ====== F) Додаємо маркери ======
-  wagons.forEach(w => {
-    L.marker([w.lat, w.lng], { icon: wagonIcon })
-      .addTo(map)
-      .on('click', () => {
-        L.popup({ closeButton: true, maxWidth: 420 })
-          .setLatLng([w.lat, w.lng])
-          .setContent(cardHtml(w))
-          .openOn(map);
-
-        setTimeout(bindCardControls, 0);
-      });
-  });
-
-  // ====== G) Перемикання фото в карточці ======
-  function bindCardControls() {
-    document.querySelectorAll('.cardNavBtn').forEach(btn => {
-      btn.onclick = () => {
-        const dir = parseInt(btn.getAttribute('data-dir'), 10);
-        const card = btn.closest('.card');
-        const photos = JSON.parse(card.getAttribute('data-photos'));
-        let idx = parseInt(card.getAttribute('data-idx'), 10);
-
-        idx = (idx + dir + photos.length) % photos.length;
-        card.setAttribute('data-idx', String(idx));
-        card.querySelector('.cardImg').src = photos[idx];
-      };
-    });
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+  }
+  function escapeAttr(s){
+    return escapeHtml(s).replaceAll("\n"," ");
   }
 
-  // ====== H) Клік по карті — показує координати для нових точок ======
+  // =========================
+  // 7) MARKERS + POPUPS
+  // =========================
+  const markers = new Map(); // id -> marker
+
+  function openWagonPopup(w, photoIndex = 0) {
+    const marker = markers.get(w.id);
+    if (!marker) return;
+
+    const popup = L.popup({ closeButton: false, maxWidth: 540 })
+      .setLatLng([w.y, w.x])
+      .setContent(cardHtml(w, photoIndex))
+      .openOn(map);
+
+    // після відкриття - підключаємо кнопки та інпути
+    setTimeout(() => bindCardControls(w.id), 0);
+  }
+
+  function bindCardControls(id){
+    const card = document.querySelector(`.rdrCard[data-id="${id}"]`);
+    if (!card) return;
+    const w = wagonById(id);
+    if (!w) return;
+
+    const getIdx = () => parseInt(card.getAttribute("data-idx"), 10) || 0;
+
+    const photos = (w.photos && w.photos.length) ? w.photos : ["wagon.jpg"];
+
+    const closeBtn = card.querySelector('[data-action="close"]');
+    if (closeBtn) closeBtn.onclick = () => map.closePopup();
+
+    const prevBtn = card.querySelector('[data-action="prev"]');
+    const nextBtn = card.querySelector('[data-action="next"]');
+
+    if (prevBtn) prevBtn.onclick = () => {
+      const idx = (getIdx() - 1 + photos.length) % photos.length;
+      openWagonPopup(w, idx);
+    };
+    if (nextBtn) nextBtn.onclick = () => {
+      const idx = (getIdx() + 1) % photos.length;
+      openWagonPopup(w, idx);
+    };
+
+    const saveBtn = card.querySelector('[data-action="save"]');
+    if (saveBtn) saveBtn.onclick = () => {
+      // зчитуємо поля
+      card.querySelectorAll('[data-field]').forEach(el => {
+        const field = el.getAttribute('data-field');
+        if (!field) return;
+
+        if (field === 'price' || field === 'weight' || field === 'seats' || field === 'deliveries'){
+          w[field] = parseInt(el.value || "0", 10);
+        } else if (field === 'photos') {
+          w.photos = String(el.value || "")
+            .split(',')
+            .map(x => x.trim())
+            .filter(Boolean);
+        } else {
+          w[field] = el.value ?? "";
+        }
+      });
+
+      // зберегти
+      saveState({ wagons });
+      // оновити попап (щоб заголовок/фото оновились)
+      openWagonPopup(w, getIdx());
+    };
+
+    const resetBtn = card.querySelector('[data-action="resetPos"]');
+    if (resetBtn) resetBtn.onclick = () => {
+      // повертаємо в дефолт для цього id
+      const d = defaultWagons.find(x => x.id === w.id);
+      if (!d) return;
+      w.x = d.x; w.y = d.y;
+      const marker = markers.get(w.id);
+      marker.setLatLng([w.y, w.x]);
+      saveState({ wagons });
+      openWagonPopup(w, getIdx());
+    };
+  }
+
+  // створюємо маркери
+  wagons.forEach(w => {
+    const marker = L.marker([w.y, w.x], {
+      icon: wagonIcon,
+      draggable: true
+    }).addTo(map);
+
+    markers.set(w.id, marker);
+
+    marker.on('click', () => openWagonPopup(w, 0));
+
+    // перетягування — зберігає координати
+    marker.on('dragend', (e) => {
+      const ll = e.target.getLatLng();
+      w.y = ll.lat;
+      w.x = ll.lng;
+      saveState({ wagons });
+    });
+  });
+
+  // =========================
+  // 8) КЛІК ПО КАРТІ = КООРДИНАТИ
+  // =========================
   map.on('click', (e) => {
-    alert(`Y(lat): ${Math.round(e.latlng.lat)}, X(lng): ${Math.round(e.latlng.lng)}`);
+    alert(`Координати:\nY(lat): ${Math.round(e.latlng.lat)}\nX(lng): ${Math.round(e.latlng.lng)}`);
   });
 </script>
-
 </body>
 </html>
