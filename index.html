@@ -11,25 +11,43 @@
   <style>
     body { margin:0; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
 
-    /* фон як у карти */
     #map{
+      position: relative;
       height:100vh;
       width:100vw;
       background: #cdb38f;
     }
 
-    /* віньєтка */
     #map::after{
       content:"";
       position: fixed;
       inset: 0;
       pointer-events: none;
+      z-index: 250;
       background: radial-gradient(circle at 50% 45%,
         rgba(0,0,0,0) 45%,
         rgba(0,0,0,.16) 75%,
         rgba(0,0,0,.30) 100%);
       mix-blend-mode: multiply;
     }
+
+    /* Reset button */
+    .resetBtn{
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 9999;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 900;
+      background: rgba(35,24,14,.90);
+      color: #f3e6cf;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    .resetBtn:hover{ background: rgba(35,24,14,.98); }
 
     /* Popup shell */
     .leaflet-popup-content-wrapper { background: transparent; box-shadow:none; }
@@ -85,7 +103,7 @@
     }
 
     .rdrTop { position: relative; height: 290px; background: #1a110a; }
-    .rdrImg { width: 100%; height: 100%; object-fit: cover; display:block; filter: saturate(.95) contrast(1.05); }
+    .rdrImg { width: 100%; height: 100%; object-fit: cover; display:block; filter: saturate(.95) contrast(1.05); background: rgba(0,0,0,.15); }
 
     .rdrClose{
       position:absolute; top: 12px; right: 12px;
@@ -95,6 +113,7 @@
       color: #fff;
       background: rgba(0,0,0,.35);
       font-size: 20px; line-height: 34px;
+      z-index: 5;
     }
     .rdrClose:hover { background: rgba(0,0,0,.55); }
 
@@ -107,6 +126,7 @@
       color:#fff;
       background: rgba(0,0,0,.35);
       font-size: 24px; line-height: 48px;
+      z-index: 5;
     }
     .navBtn:hover{ background: rgba(0,0,0,.55); }
     .navLeft{ left: 14px; }
@@ -120,6 +140,7 @@
       padding: 8px 10px;
       border-radius: 999px;
       background: rgba(0,0,0,.25);
+      z-index: 5;
     }
     .dot{ width: 8px; height: 8px; border-radius:999px; background: rgba(255,255,255,.35); }
     .dot.active{ background: rgba(255,255,255,.9); }
@@ -136,11 +157,7 @@
       gap: 10px;
       margin-bottom: 10px;
     }
-    .titleRow .name{
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: .2px;
-    }
+    .titleRow .name{ font-size: 22px; font-weight: 900; letter-spacing: .2px; }
     .titleRow .idPill{
       padding: 8px 12px;
       border-radius: 999px;
@@ -151,7 +168,6 @@
       white-space: nowrap;
     }
 
-    /* stats */
     .statsGrid{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -165,18 +181,9 @@
       border-radius: 14px;
       padding: 10px 10px;
     }
-    .stat .label{
-      font-size: 12px;
-      opacity: .88;
-      margin-bottom: 6px;
-    }
-    .stat .value{
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: .2px;
-    }
+    .stat .label{ font-size: 12px; opacity: .88; margin-bottom: 6px; }
+    .stat .value{ font-size: 18px; font-weight: 900; letter-spacing: .2px; }
 
-    /* price */
     .priceRow{
       display:flex;
       align-items:center;
@@ -185,11 +192,7 @@
       padding-top: 10px;
       border-top: 1px solid rgba(255,255,255,.10);
     }
-    .priceLabel{
-      font-size: 12px;
-      opacity: .85;
-      font-weight: 800;
-    }
+    .priceLabel{ font-size: 12px; opacity: .85; font-weight: 800; }
     .priceValue{
       font-size: 28px;
       font-weight: 1000;
@@ -206,106 +209,81 @@
   </style>
 </head>
 <body>
+<button class="resetBtn" id="resetBtn">Reset save</button>
 <div id="map"></div>
 
 <script>
-  // =========================
-  // PATH FIX (GitHub Pages)
-  // =========================
+  // PATH (GitHub Pages)
   const basePath = location.pathname.endsWith("/")
     ? location.pathname
     : location.pathname.replace(/[^/]+$/, "");
 
-  const MAP_URL   = basePath + "map.jpg";
-  const WAGON_URL = basePath + "wagon.png";
-
-  // cache-bust (щоб GitHub кеш не заважав після пуша)
+  // cache-bust для картинок (щоб GitHub cache не мучив)
   const bust = `?v=${Date.now()}`;
 
-  // =========================
+  const MAP_URL   = basePath + "map.jpg" + bust;
+  const WAGON_URL = basePath + "wagon.png" + bust;
+
   // STORAGE
-  // =========================
-  const STORAGE_KEY = "rdr2_wagons_v2";
-  function loadState() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); }
-    catch(e){ return null; }
-  }
-  function saveState(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
+  const STORAGE_KEY = "rdr2_wagons_v3";
+  function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch(e){ return null; } }
+  function saveState(state){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-  // ==========================================================
-  // ✅ ТУТ ТИ МІНЯЄШ ДАНІ ПОВОЗОК (W1..W15)
-  // ==========================================================
-  // photos:
-  // - локально: basePath + "W1.jpg"
-  // - або URL: "https://....jpg"
-  //
-  // x,y (позиції) ми потім підставимо твої (або ти напишеш координати)
+  document.getElementById("resetBtn").onclick = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  };
+
+  // ✅ ТУТ ТИ МІНЯЄШ ДАНІ
+  // photos: пиши просто "W1.jpg" (код сам додасть basePath)
   const WAGONS_DATA = [
-    {
-      id: 1,
-      name: "W1",
-      price: 3100,
-      deliveriesToBuy: 20,
-      passengers: 2,
-      slots: 0,
-      kg: 0,
-      photos: [basePath + "W1.jpg"],
-
-      // тимчасово (потім замінимо на твої)
-      x: null,
-      y: null
-    },
-
-    // W2..W15 поки пусті — просто заповнюй так само
-    { id: 2,  name: "W2",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 3,  name: "W3",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 4,  name: "W4",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 5,  name: "W5",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 6,  name: "W6",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 7,  name: "W7",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 8,  name: "W8",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 9,  name: "W9",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 10, name: "W10", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 11, name: "W11", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 12, name: "W12", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 13, name: "W13", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 14, name: "W14", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
-    { id: 15, name: "W15", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: [], x: null, y: null },
+    { id: 1, name: "W1", price: 3100, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W1.jpg"], x: null, y: null },
+    { id: 2, name: "W2", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W2.jpg"], x: null, y: null },
+    { id: 3, name: "W3", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W3.jpg"], x: null, y: null },
+    { id: 4, name: "W4", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W4.jpg"], x: null, y: null },
+    { id: 5, name: "W5", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W5.jpg"], x: null, y: null },
+    { id: 6, name: "W6", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W6.jpg"], x: null, y: null },
+    { id: 7, name: "W7", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W7.jpg"], x: null, y: null },
+    { id: 8, name: "W8", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W8.jpg"], x: null, y: null },
+    { id: 9, name: "W9", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W9.jpg"], x: null, y: null },
+    { id: 10, name: "W10", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W10.jpg"], x: null, y: null },
+    { id: 11, name: "W11", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W11.jpg"], x: null, y: null },
+    { id: 12, name: "W12", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W12.jpg"], x: null, y: null },
+    { id: 13, name: "W13", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W13.jpg"], x: null, y: null },
+    { id: 14, name: "W14", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W14.jpg"], x: null, y: null },
+    { id: 15, name: "W15", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W15.jpg"], x: null, y: null },
   ];
 
-  // =========================
   // helpers
-  // =========================
-  function escapeHtml(s){
-    return String(s ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;");
-  }
-  function num(n){ const x = Number(n||0); return Number.isFinite(x) ? x : 0; }
-  function fmtInt(n){ return Math.round(num(n)).toString(); }
-  function fmtPrice(n){ return num(n).toLocaleString('uk-UA'); }
+  const num = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
+  const fmtInt = (n) => String(Math.round(num(n)));
+  const fmtPrice = (n) => num(n).toLocaleString('uk-UA');
+  const esc = (s) => String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
 
-  function renderDots(count, activeIndex) {
+  function resolveUrl(u){
+    const s = String(u || "").trim();
+    if (!s) return "";
+    if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:")) return s;
+    return basePath + s + bust; // ✅ cache bust для фото
+  }
+
+  function renderDots(count, activeIndex){
     let html = `<div class="dotsWrap">`;
-    for (let i=0;i<count;i++){
-      html += `<div class="dot ${i===activeIndex ? "active":""}"></div>`;
-    }
+    for (let i=0;i<count;i++) html += `<div class="dot ${i===activeIndex ? "active":""}"></div>`;
     html += `</div>`;
     return html;
   }
 
   function cardHtml(w, photoIndex){
-    const photos = (w.photos && w.photos.length) ? w.photos : [WAGON_URL];
+    const rawPhotos = (w.photos && w.photos.length) ? w.photos : ["wagon.png"];
+    const photos = rawPhotos.map(resolveUrl).filter(Boolean);
     const idx = Math.max(0, Math.min(photoIndex ?? 0, photos.length-1));
+    const src = photos[idx] || WAGON_URL;
 
     return `
       <div class="rdrCard" data-id="${w.id}" data-idx="${idx}">
         <div class="rdrTop">
-          <img class="rdrImg" src="${photos[idx]}" alt="photo">
+          <img class="rdrImg" src="${src}" alt="photo">
           <button class="rdrClose" data-action="close">×</button>
 
           ${photos.length>1 ? `<button class="navBtn navLeft" data-action="prev">‹</button>` : ``}
@@ -315,27 +293,15 @@
 
         <div class="rdrBody">
           <div class="titleRow">
-            <div class="name">${escapeHtml(w.name)}</div>
+            <div class="name">${esc(w.name)}</div>
             <div class="idPill">#${w.id}</div>
           </div>
 
           <div class="statsGrid">
-            <div class="stat">
-              <div class="label">Пасажирів</div>
-              <div class="value">${fmtInt(w.passengers)}</div>
-            </div>
-            <div class="stat">
-              <div class="label">Слоти</div>
-              <div class="value">${fmtInt(w.slots)}</div>
-            </div>
-            <div class="stat">
-              <div class="label">Кг</div>
-              <div class="value">${fmtInt(w.kg)}</div>
-            </div>
-            <div class="stat">
-              <div class="label">Потрібно доставок для купівлі</div>
-              <div class="value">${fmtInt(w.deliveriesToBuy)}</div>
-            </div>
+            <div class="stat"><div class="label">Пасажирів</div><div class="value">${fmtInt(w.passengers)}</div></div>
+            <div class="stat"><div class="label">Слоти</div><div class="value">${fmtInt(w.slots)}</div></div>
+            <div class="stat"><div class="label">Кг</div><div class="value">${fmtInt(w.kg)}</div></div>
+            <div class="stat"><div class="label">Потрібно доставок для купівлі</div><div class="value">${fmtInt(w.deliveriesToBuy)}</div></div>
           </div>
 
           <div class="priceRow">
@@ -356,111 +322,87 @@
     `;
   }
 
-  // =========================
   // preload map.jpg to get size
-  // =========================
   const preload = new Image();
   preload.onload = () => initMap(preload.width, preload.height);
-  preload.onerror = () => {
-    alert(
-      "Не можу завантажити карту.\n\n" +
-      "Перевір:\n" +
-      "1) файл називається ТОЧНО map.jpg (регістр важливий)\n" +
-      "2) лежить поруч з index.html\n\n" +
-      "Спроба завантажити: " + MAP_URL
-    );
-  };
-  preload.src = MAP_URL + bust;
+  preload.onerror = () => alert("Не можу завантажити map.jpg. Перевір файл map.jpg поруч з index.html");
+  preload.src = MAP_URL;
 
-  // =========================
-  // init map
-  // =========================
   function initMap(MAP_WIDTH, MAP_HEIGHT){
-    const map = L.map('map', {
-      crs: L.CRS.Simple,
-      minZoom: -2,
-      maxZoom: 2,
-      zoomControl: true
-    });
+    const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2, zoomControl: true });
 
     const bounds = [[0,0],[MAP_HEIGHT, MAP_WIDTH]];
-    L.imageOverlay(MAP_URL + bust, bounds).addTo(map);
+    L.imageOverlay(MAP_URL, bounds).addTo(map);
     map.fitBounds(bounds);
     map.setMaxBounds(bounds);
 
-    // беремо з localStorage (позиції після drag), або з WAGONS_DATA
+    // ✅ зливаємо: беремо характеристики з WAGONS_DATA, але позиції — зі збереження (якщо є)
     const saved = loadState();
+    const savedById = new Map((saved?.wagons || []).map(w => [w.id, w]));
 
-    // зробимо копію даних + поставимо дефолтні координати якщо null
-    const wagons = (saved?.wagons ?? WAGONS_DATA.map(w => ({...w}))).map((w, idx) => {
-      const ww = {...w};
+    const wagons = WAGONS_DATA.map((w, idx) => {
+      const s = savedById.get(w.id);
+      const out = { ...w };
 
-      // Якщо координати ще не задані — ставимо тимчасові "кучкою"
-      if (ww.x == null || ww.y == null){
-        ww.x = Math.round(MAP_WIDTH * (0.55 + (idx%5)*0.04));
-        ww.y = Math.round(MAP_HEIGHT * (0.25 + Math.floor(idx/5)*0.06));
+      // позиції беремо зі збереження
+      if (s && typeof s.x === "number" && typeof s.y === "number"){
+        out.x = s.x; out.y = s.y;
       }
-      return ww;
+
+      // якщо позиції ще нема — тимчасова
+      if (out.x == null || out.y == null){
+        out.x = Math.round(MAP_WIDTH * (0.55 + (idx%5)*0.04));
+        out.y = Math.round(MAP_HEIGHT * (0.25 + Math.floor(idx/5)*0.06));
+      }
+
+      return out;
     });
 
-    const markers = new Map();
     const wagonById = (id) => wagons.find(x => x.id === id);
 
-    function openWagonPopup(w, photoIndex = 0){
-      const marker = markers.get(w.id);
-      if (!marker) return;
+    function openPopupFor(w, marker, photoIndex = 0){
+      marker
+        .bindPopup(cardHtml(w, photoIndex), { closeButton: false, maxWidth: 600, autoPan: true, keepInView: true })
+        .openPopup();
 
-      L.popup({ closeButton: false, maxWidth: 560 })
-        .setLatLng([w.y, w.x])
-        .setContent(cardHtml(w, photoIndex))
-        .openOn(map);
+      setTimeout(() => {
+        const card = document.querySelector(`.rdrCard[data-id="${w.id}"]`);
+        if (!card) return;
 
-      setTimeout(() => bindCard(w.id), 0);
+        const imgEl = card.querySelector(".rdrImg");
+        if (imgEl) imgEl.onerror = () => { imgEl.src = WAGON_URL; };
+
+        const photos = ((w.photos && w.photos.length) ? w.photos : ["wagon.png"]).map(resolveUrl).filter(Boolean);
+        const getIdx = () => parseInt(card.getAttribute("data-idx"), 10) || 0;
+
+        const closeBtn = card.querySelector('[data-action="close"]');
+        if (closeBtn) closeBtn.onclick = () => marker.closePopup();
+
+        const prevBtn = card.querySelector('[data-action="prev"]');
+        const nextBtn = card.querySelector('[data-action="next"]');
+
+        if (prevBtn) prevBtn.onclick = () => openPopupFor(w, marker, (getIdx() - 1 + photos.length) % photos.length);
+        if (nextBtn) nextBtn.onclick = () => openPopupFor(w, marker, (getIdx() + 1) % photos.length);
+      }, 0);
     }
 
-    function bindCard(id){
-      const card = document.querySelector(`.rdrCard[data-id="${id}"]`);
-      if (!card) return;
-      const w = wagonById(id);
-      if (!w) return;
-
-      const photos = (w.photos && w.photos.length) ? w.photos : [WAGON_URL];
-      const getIdx = () => parseInt(card.getAttribute("data-idx"), 10) || 0;
-
-      const closeBtn = card.querySelector('[data-action="close"]');
-      if (closeBtn) closeBtn.onclick = () => map.closePopup();
-
-      const prevBtn = card.querySelector('[data-action="prev"]');
-      const nextBtn = card.querySelector('[data-action="next"]');
-
-      if (prevBtn) prevBtn.onclick = () => openWagonPopup(w, (getIdx() - 1 + photos.length) % photos.length);
-      if (nextBtn) nextBtn.onclick = () => openWagonPopup(w, (getIdx() + 1) % photos.length);
-    }
-
-    // markers
     wagons.forEach(w => {
-      const icon = L.divIcon({
-        className: "",
-        html: markerHtml(w.id),
-        iconSize: [44, 44],
-        iconAnchor: [0, 0]
-      });
-
+      const icon = L.divIcon({ className: "", html: markerHtml(w.id), iconSize: [44, 44], iconAnchor: [0, 0] });
       const m = L.marker([w.y, w.x], { icon, draggable: true }).addTo(map);
-      markers.set(w.id, m);
 
-      m.on('click', () => openWagonPopup(w, 0));
+      m.on('click', () => openPopupFor(w, m, 0));
 
-      // drag = зберігає позицію
       m.on('dragend', (e) => {
         const ll = e.target.getLatLng();
         w.y = ll.lat;
         w.x = ll.lng;
-        saveState({ wagons });
+
+        // зберігаємо тільки позиції (щоб не затирати твої цифри/фото)
+        const toSave = wagons.map(x => ({ id: x.id, x: x.x, y: x.y }));
+        saveState({ wagons: toSave });
       });
     });
 
-    // click coords (для розстановки)
     map.on('click', (e) => {
       alert(`Координати:\nY(lat): ${Math.round(e.latlng.lat)}\nX(lng): ${Math.round(e.latlng.lng)}`);
     });
