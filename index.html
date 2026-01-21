@@ -9,7 +9,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    body { 
+    body{
       margin:0;
       background:#D2B791;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
@@ -19,7 +19,7 @@
       position: relative;
       height:100vh;
       width:100vw;
-      background: #D2B791;
+      background:#D2B791;
     }
 
     /* віньєтка */
@@ -96,7 +96,7 @@
     .pinIcon img{ width: 26px; height: 26px; display:block; }
 
     /* Card */
-    .rdrCard {
+    .rdrCard{
       width: 540px;
       border-radius: 26px;
       overflow: hidden;
@@ -107,8 +107,8 @@
       backdrop-filter: blur(2px);
     }
 
-    .rdrTop { position: relative; height: 290px; background: #1a110a; }
-    .rdrImg {
+    .rdrTop{ position: relative; height: 290px; background: #1a110a; }
+    .rdrImg{
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -208,14 +208,12 @@
       padding-top: 10px;
       border-top: 1px solid rgba(255,255,255,.10);
     }
-
     .priceLabel{
       font-size: 14px;
       opacity: .90;
       font-weight: 900;
       color: #f3e6cf;
     }
-
     .priceValue{
       font-size: 28px;
       font-weight: 1000;
@@ -269,16 +267,16 @@
 <div id="map"></div>
 
 <script>
+  // ===== PATH (GitHub Pages) =====
   const basePath = location.pathname.endsWith("/")
     ? location.pathname
     : location.pathname.replace(/[^/]+$/, "");
 
   const bust = `?v=${Date.now()}`;
-
   const MAP_URL   = basePath + "map.jpg" + bust;
   const WAGON_URL = basePath + "wagon.png" + bust;
 
-  // зберігаємо тільки координати повозок (як було)
+  // ===== STORAGE =====
   const STORAGE_KEY = "rdr2_wagons_v4";
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch(e){ return null; } }
   function saveState(state){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -289,24 +287,26 @@
     location.reload();
   };
 
+  // ===== DATA =====
   const WAGONS_DATA = [
     { id: 1,  title: "Возик", code: "W1",  price: 3100, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W1.jpg"],  x: 1874, y: 747 },
-    { id: 2,  title: "Возик", code: "W2",  price: 6000, deliveriesToBuy: 80, passengers: 8, slots: 30, kg: 50, photos: ["W2.jpg"], x: 1969, y: 1182 },
-    { id: 3,  title: "Возик", code: "W3",  price: 3850, deliveriesToBuy: 30, passengers: 3, slots: 40, kg: 100, photos: ["W3.jpg"], x: 1621, y: 989 },
-    { id: 4,  title: "Возик", code: "W4",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W4.jpg"], x: 1600, y: 900 },
-    { id: 5,  title: "Возик", code: "W5",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W5.jpg"], x: 1600, y: 900 },
-    { id: 6,  title: "Возик", code: "W6",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W6.jpg"], x: 1600, y: 900 },
-    { id: 7,  title: "Возик", code: "W7",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W7.jpg"], x: 1600, y: 900 },
-    { id: 8,  title: "Возик", code: "W8",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W8.jpg"], x: 1400, y: 860 },
-    { id: 9,  title: "Возик", code: "W9",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W9.jpg"], x: 1400, y: 860 },
-    { id: 10, title: "Возик", code: "W10", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W10.jpg"], x: 1200, y: 820 },
-    { id: 11, title: "Возик", code: "W11", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W11.jpg"], x: 1200, y: 820 },
-    { id: 12, title: "Возик", code: "W12", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W12.jpg"], x: 1200, y: 820 },
-    { id: 13, title: "Возик", code: "W13", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W13.jpg"], x: 1000, y: 780 },
-    { id: 14, title: "Возик", code: "W14", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W14.jpg"], x: 900, y: 740 },
-    { id: 15, title: "Возик", code: "W15", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W15.jpg"], x: 900, y: 740 },
+    { id: 2,  title: "Возик", code: "W2",  price: 6000, deliveriesToBuy: 80, passengers: 8, slots: 30, kg: 50, photos: ["W2.jpg"],  x: 1969, y: 1182 },
+    { id: 3,  title: "Возик", code: "W3",  price: 3850, deliveriesToBuy: 30, passengers: 3, slots: 40, kg: 100, photos: ["W3.jpg"],  x: 1621, y: 989 },
+    { id: 4,  title: "Возик", code: "W4",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W4.jpg"], x: null, y: null },
+    { id: 5,  title: "Возик", code: "W5",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W5.jpg"], x: null, y: null },
+    { id: 6,  title: "Возик", code: "W6",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W6.jpg"], x: null, y: null },
+    { id: 7,  title: "Возик", code: "W7",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W7.jpg"], x: null, y: null },
+    { id: 8,  title: "Возик", code: "W8",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W8.jpg"], x: null, y: null },
+    { id: 9,  title: "Возик", code: "W9",  price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W9.jpg"], x: null, y: null },
+    { id: 10, title: "Возик", code: "W10", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W10.jpg"], x: null, y: null },
+    { id: 11, title: "Возик", code: "W11", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W11.jpg"], x: null, y: null },
+    { id: 12, title: "Возик", code: "W12", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W12.jpg"], x: null, y: null },
+    { id: 13, title: "Возик", code: "W13", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W13.jpg"], x: null, y: null },
+    { id: 14, title: "Возик", code: "W14", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W14.jpg"], x: null, y: null },
+    { id: 15, title: "Возик", code: "W15", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W15.jpg"], x: null, y: null },
   ];
 
+  // ===== HELPERS =====
   const num = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
   const fmtInt = (n) => String(Math.round(num(n)));
   function fmtPriceDot(n){
@@ -333,11 +333,12 @@
     return html;
   }
 
+  // ===== GROUP PICKER UI =====
   function groupHeaderHtml(ids, activeId){
     if (!ids || ids.length <= 1) return "";
     const buttons = ids.map(id => {
       const active = id === activeId ? "active" : "";
-      return `<button class="pickBtn ${active}" data-pick="${id}">#${id}</button>`;
+      return `<button class="pickBtn ${active}" data-pick="${id}" type="button">#${id}</button>`;
     }).join("");
 
     return `
@@ -348,6 +349,7 @@
     `;
   }
 
+  // ===== CARD =====
   function cardHtml(w, photoIndex){
     const rawPhotos = (w.photos && w.photos.length) ? w.photos : ["wagon.png"];
     const photos = rawPhotos.map(resolveUrl).filter(Boolean);
@@ -358,19 +360,16 @@
       <div class="rdrCard" data-id="${w.id}" data-idx="${idx}">
         <div class="rdrTop">
           <img class="rdrImg" src="${src}" alt="photo">
-          <button class="rdrClose" data-action="close">×</button>
+          <button class="rdrClose" data-action="close" type="button">×</button>
 
-          ${photos.length>1 ? `<button class="navBtn navLeft" data-action="prev">‹</button>` : ``}
-          ${photos.length>1 ? `<button class="navBtn navRight" data-action="next">›</button>` : ``}
-
+          ${photos.length>1 ? `<button class="navBtn navLeft" data-action="prev" type="button">‹</button>` : ``}
+          ${photos.length>1 ? `<button class="navBtn navRight" data-action="next" type="button">›</button>` : ``}
           ${photos.length>1 ? renderDots(photos.length, idx) : ``}
         </div>
 
         <div class="rdrBody">
           <div class="titleRow">
-            <div>
-              <div class="name">${esc(w.title || "Возик")}</div>
-            </div>
+            <div class="name">${esc(w.title || "Возик")}</div>
             <div class="idPill">#${w.id}</div>
           </div>
 
@@ -397,26 +396,7 @@
     return raw.replace(`<div class="rdrBody">`, `<div class="rdrBody">${groupHeaderHtml(groupIds, activeId)}`);
   }
 
-  function bindGroupPopup(wagons, groupIds, activeId, marker){
-    const root = document.querySelector(`.rdrCard[data-id="${activeId}"]`);
-    if (!root) return;
-
-    const imgEl = root.querySelector(".rdrImg");
-    if (imgEl) imgEl.onerror = () => { imgEl.src = WAGON_URL; };
-
-    const closeBtn = root.querySelector('[data-action="close"]');
-    if (closeBtn) closeBtn.onclick = () => marker.closePopup();
-
-    root.querySelectorAll("[data-pick]").forEach(btn => {
-      btn.onclick = () => {
-        const id = parseInt(btn.getAttribute("data-pick"), 10);
-        if (!Number.isFinite(id)) return;
-        marker.setPopupContent(groupCardHtml(wagons, groupIds, id));
-        setTimeout(() => bindGroupPopup(wagons, groupIds, id, marker), 0);
-      };
-    });
-  }
-
+  // ===== MARKER HTML =====
   function markerHtml(label){
     return `
       <div class="pinWrap">
@@ -426,6 +406,52 @@
     `;
   }
 
+  function groupLabel(ids){
+    if (ids.length === 1) return `#${ids[0]}`;
+    const min = Math.min(...ids);
+    const max = Math.max(...ids);
+    return `#${min}-${max}`;
+  }
+
+  // ===== BIND GROUP POPUP (FIX CLICK!) =====
+  function bindGroupPopup(wagons, groupIds, activeId, marker){
+    const root = document.querySelector(`.rdrCard[data-id="${activeId}"]`);
+    if (!root) return;
+
+    // ✅ КЛЮЧОВЕ: щоб кліки не "пробивали" на карту/маркер
+    L.DomEvent.disableClickPropagation(root);
+    L.DomEvent.disableScrollPropagation(root);
+
+    // fallback для фото
+    const imgEl = root.querySelector(".rdrImg");
+    if (imgEl) imgEl.onerror = () => { imgEl.src = WAGON_URL; };
+
+    // close
+    const closeBtn = root.querySelector('[data-action="close"]');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        marker.closePopup();
+      };
+    }
+
+    // перемикання повозок у групі
+    root.querySelectorAll("[data-pick]").forEach(btn => {
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const id = parseInt(btn.getAttribute("data-pick"), 10);
+        if (!Number.isFinite(id)) return;
+
+        marker.setPopupContent(groupCardHtml(wagons, groupIds, id));
+        setTimeout(() => bindGroupPopup(wagons, groupIds, id, marker), 0);
+      };
+    });
+  }
+
+  // ===== PRELOAD MAP =====
   const preload = new Image();
   preload.onload = () => initMap(preload.width, preload.height);
   preload.onerror = () => alert("Не можу завантажити map.jpg. Перевір файл map.jpg поруч з index.html");
@@ -447,6 +473,7 @@
     map.fitBounds(bounds);
     map.setMaxBounds(bounds);
 
+    // ===== load saved wagon positions =====
     const saved = loadState();
     const savedById = new Map((saved?.wagons || []).map(w => [w.id, w]));
 
@@ -464,27 +491,26 @@
       return out;
     });
 
-    // ====== ГРУПИ, ЯК ТИ ПРОСИВ ======
+    // ===== YOUR GROUPS =====
     const GROUPS_DEFAULT = [
       { ids: [1], x: wagons.find(w=>w.id===1).x, y: wagons.find(w=>w.id===1).y },
       { ids: [2], x: wagons.find(w=>w.id===2).x, y: wagons.find(w=>w.id===2).y },
       { ids: [3], x: wagons.find(w=>w.id===3).x, y: wagons.find(w=>w.id===3).y },
 
-      { ids: [4,5,6,7], x: wagons.find(w=>w.id===4).x, y: wagons.find(w=>w.id===4).y },
-      { ids: [8,9],     x: wagons.find(w=>w.id===8).x, y: wagons.find(w=>w.id===8).y },
-      { ids: [10,11,12],x: wagons.find(w=>w.id===10).x,y: wagons.find(w=>w.id===10).y },
-      { ids: [13],      x: wagons.find(w=>w.id===13).x,y: wagons.find(w=>w.id===13).y },
-      { ids: [14,15],   x: wagons.find(w=>w.id===14).x,y: wagons.find(w=>w.id===14).y },
+      { ids: [4,5,6,7],  x: wagons.find(w=>w.id===4).x,  y: wagons.find(w=>w.id===4).y },
+      { ids: [8,9],      x: wagons.find(w=>w.id===8).x,  y: wagons.find(w=>w.id===8).y },
+      { ids: [10,11,12], x: wagons.find(w=>w.id===10).x, y: wagons.find(w=>w.id===10).y },
+      { ids: [13],       x: wagons.find(w=>w.id===13).x, y: wagons.find(w=>w.id===13).y },
+      { ids: [14,15],    x: wagons.find(w=>w.id===14).x, y: wagons.find(w=>w.id===14).y },
     ];
 
-    // завантаження позицій груп (якщо тягав маркери груп)
+    // ===== load saved group positions =====
     let GROUPS = GROUPS_DEFAULT;
     try{
       const raw = localStorage.getItem("rdr2_groups_v1");
       if (raw){
         const savedGroups = JSON.parse(raw);
         if (Array.isArray(savedGroups) && savedGroups.length){
-          // зберігаємо координати по ids (як ключ)
           const key = (ids) => ids.slice().sort((a,b)=>a-b).join("-");
           const mapSaved = new Map(savedGroups.map(g => [key(g.ids), g]));
           GROUPS = GROUPS_DEFAULT.map(g => {
@@ -495,14 +521,7 @@
       }
     }catch(e){}
 
-    function groupLabel(ids){
-      if (ids.length === 1) return `#${ids[0]}`;
-      const min = Math.min(...ids);
-      const max = Math.max(...ids);
-      return `#${min}-${max}`;
-    }
-
-    // малюємо маркери по групах
+    // ===== create markers by groups =====
     GROUPS.forEach(g => {
       const label = groupLabel(g.ids);
 
