@@ -12,21 +12,19 @@
     body { margin:0; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
     #map { height:100vh; width:100vw; background:#000; }
 
-    /* Приховати стандартні контролли, якщо хочеш кастомні */
-    /* .leaflet-control-zoom { display:none; } */
-
     /* Popup shell */
     .leaflet-popup-content-wrapper { background: transparent; box-shadow:none; }
     .leaflet-popup-content { margin: 0; }
     .leaflet-popup-tip { background: rgba(40,28,16,.92); }
 
-    /* Marker badge (як на твоєму прикладі) */
+    /* Marker (бейдж + іконка як на скріні) */
     .pinWrap{
       position: relative;
       width: 44px; height: 44px;
       transform: translate(-50%, -100%);
       filter: drop-shadow(0 10px 14px rgba(0,0,0,.45));
       user-select: none;
+      pointer-events: auto;
     }
     .pinBadge{
       position:absolute;
@@ -57,7 +55,7 @@
       display:block;
     }
 
-    /* RDR2-like card */
+    /* RDR2-like popup card */
     .rdrCard {
       width: 520px;
       border-radius: 26px;
@@ -160,6 +158,25 @@
 <div id="map"></div>
 
 <script>
+  // =========================
+  // PATH FIX (GitHub Pages)
+  // =========================
+  // Працює для:
+  // - https://username.github.io/
+  // - https://username.github.io/repo/
+  const basePath = location.pathname.endsWith("/")
+    ? location.pathname
+    : location.pathname.replace(/[^/]+$/, "");
+
+  const MAP_URL   = basePath + "map.jpg";
+  const WAGON_URL = basePath + "wagon.png";
+
+  // cache-bust щоб не мучитись з кешем GitHub Pages
+  const bust = `?v=${Date.now()}`;
+
+  // =========================
+  // STORAGE
+  // =========================
   const STORAGE_KEY = "rdr2_pins_v1";
 
   function loadState() {
@@ -170,10 +187,10 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 
-  // ДЕФОЛТНИЙ набір (можеш замінити на свої точки)
+  // =========================
+  // DEFAULT PINS (приклад)
+  // =========================
   function makeDefaultPins(mapW, mapH){
-    // зробив координати, які точно в межах картинки
-    // x = lng (0..mapW), y = lat (0..mapH)
     return Array.from({length: 15}, (_, i) => {
       const id = i + 1;
       return {
@@ -190,6 +207,9 @@
     });
   }
 
+  // =========================
+  // UI helpers
+  // =========================
   function escapeHtml(s){
     return String(s ?? "")
       .replaceAll("&","&amp;")
@@ -208,7 +228,7 @@
   }
 
   function cardHtml(p, photoIndex){
-    const photos = (p.photos && p.photos.length) ? p.photos : ["wagon.png"];
+    const photos = (p.photos && p.photos.length) ? p.photos : [WAGON_URL];
     const idx = Math.max(0, Math.min(photoIndex ?? 0, photos.length-1));
 
     return `
@@ -240,21 +260,32 @@
     return `
       <div class="pinWrap">
         <div class="pinBadge">#${id}</div>
-        <div class="pinIcon"><img src="wagon.png" alt=""></div>
+        <div class="pinIcon"><img src="${WAGON_URL}" alt=""></div>
       </div>
     `;
   }
 
-  // 1) Спершу зчитуємо розміри map.jpg, щоб Leaflet працював 100% правильно
-  const img = new Image();
-  img.onload = () => initMap(img.width, img.height);
-  img.onerror = () => {
-    alert("Не можу завантажити map.jpg. Перевір: файл називається точно map.jpg і лежить поруч з index.html. Якщо відкриваєш як file:// — краще запусти локальний сервер.");
+  // =========================
+  // 1) Спершу зчитуємо розмір map.jpg
+  // =========================
+  const preload = new Image();
+  preload.onload = () => initMap(preload.width, preload.height);
+  preload.onerror = () => {
+    alert(
+      "Не можу завантажити карту.\n\n" +
+      "Перевір:\n" +
+      "1) файл називається ТОЧНО map.jpg (регістр важливий)\n" +
+      "2) лежить поруч з index.html\n" +
+      "3) на GitHub Pages він запушений в ту ж папку\n\n" +
+      "Спроба завантажити: " + MAP_URL
+    );
   };
-  img.src = "map.jpg";
+  preload.src = MAP_URL + bust;
 
+  // =========================
+  // INIT MAP
+  // =========================
   function initMap(MAP_WIDTH, MAP_HEIGHT){
-    // 2) INIT MAP
     const map = L.map('map', {
       crs: L.CRS.Simple,
       minZoom: -2,
@@ -263,17 +294,16 @@
     });
 
     const bounds = [[0,0],[MAP_HEIGHT, MAP_WIDTH]];
-    L.imageOverlay('map.jpg', bounds).addTo(map);
+    L.imageOverlay(MAP_URL + bust, bounds).addTo(map);
+
     map.fitBounds(bounds);
     map.setMaxBounds(bounds);
 
-    // 3) DATA
     const saved = loadState();
     const pins = saved?.pins ?? makeDefaultPins(MAP_WIDTH, MAP_HEIGHT);
 
     const markers = new Map();
-
-    function pinById(id){ return pins.find(x => x.id === id); }
+    const pinById = (id) => pins.find(x => x.id === id);
 
     function openPinPopup(p, photoIndex = 0){
       const marker = markers.get(p.id);
@@ -293,7 +323,7 @@
       const p = pinById(id);
       if (!p) return;
 
-      const photos = (p.photos && p.photos.length) ? p.photos : ["wagon.png"];
+      const photos = (p.photos && p.photos.length) ? p.photos : [WAGON_URL];
       const getIdx = () => parseInt(card.getAttribute("data-idx"), 10) || 0;
 
       const closeBtn = card.querySelector('[data-action="close"]');
@@ -306,19 +336,20 @@
       if (nextBtn) nextBtn.onclick = () => openPinPopup(p, (getIdx() + 1) % photos.length);
     }
 
-    // 4) MARKERS
+    // create markers
     pins.forEach(p => {
       const icon = L.divIcon({
         className: "",
         html: markerHtml(p.id),
         iconSize: [44, 44],
-        iconAnchor: [0, 0] // ми позиціонуємо через transform у CSS
+        iconAnchor: [0, 0]
       });
 
       const m = L.marker([p.y, p.x], { icon, draggable: true }).addTo(map);
       markers.set(p.id, m);
 
       m.on('click', () => openPinPopup(p, 0));
+
       m.on('dragend', (e) => {
         const ll = e.target.getLatLng();
         p.y = ll.lat;
@@ -327,7 +358,7 @@
       });
     });
 
-    // 5) КЛІК по карті = координати
+    // click to show coords
     map.on('click', (e) => {
       alert(`Координати:\nY(lat): ${Math.round(e.latlng.lat)}\nX(lng): ${Math.round(e.latlng.lng)}`);
     });
