@@ -18,6 +18,7 @@
       background: #cdb38f;
     }
 
+    /* віньєтка */
     #map::after{
       content:"";
       position: fixed;
@@ -103,7 +104,14 @@
     }
 
     .rdrTop { position: relative; height: 290px; background: #1a110a; }
-    .rdrImg { width: 100%; height: 100%; object-fit: cover; display:block; filter: saturate(.95) contrast(1.05); background: rgba(0,0,0,.15); }
+    .rdrImg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display:block;
+      filter: saturate(.95) contrast(1.05);
+      background: rgba(0,0,0,.15);
+    }
 
     .rdrClose{
       position:absolute; top: 12px; right: 12px;
@@ -157,7 +165,17 @@
       gap: 10px;
       margin-bottom: 10px;
     }
-    .titleRow .name{ font-size: 22px; font-weight: 900; letter-spacing: .2px; }
+    .titleRow .name{
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .titleRow .code{
+      font-size: 12px;
+      opacity: .85;
+      font-weight: 900;
+      margin-top: 2px;
+    }
     .titleRow .idPill{
       padding: 8px 12px;
       border-radius: 999px;
@@ -218,14 +236,14 @@
     ? location.pathname
     : location.pathname.replace(/[^/]+$/, "");
 
-  // cache-bust для картинок (щоб GitHub cache не мучив)
+  // cache-bust для картинок
   const bust = `?v=${Date.now()}`;
 
   const MAP_URL   = basePath + "map.jpg" + bust;
   const WAGON_URL = basePath + "wagon.png" + bust;
 
-  // STORAGE
-  const STORAGE_KEY = "rdr2_wagons_v3";
+  // STORAGE (зберігаємо ТІЛЬКИ координати)
+  const STORAGE_KEY = "rdr2_wagons_v4";
   function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null"); } catch(e){ return null; } }
   function saveState(state){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
@@ -234,24 +252,28 @@
     location.reload();
   };
 
-  // ✅ ТУТ ТИ МІНЯЄШ ДАНІ
-  // photos: пиши просто "W1.jpg" (код сам додасть basePath)
+  // ==========================================================
+  // ✅ ТУТ ТИ МІНЯЄШ ДАНІ ПОВОЗОК
+  // title = що показуємо (наприклад "Возик")
+  // code  = код/назва фото (W1..W15)
+  // photos = ["W1.jpg"] і т.д.
+  // ==========================================================
   const WAGONS_DATA = [
-    { id: 1, name: "W1", price: 3100, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W1.jpg"], x: null, y: null },
-    { id: 2, name: "W2", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W2.jpg"], x: null, y: null },
-    { id: 3, name: "W3", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W3.jpg"], x: null, y: null },
-    { id: 4, name: "W4", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W4.jpg"], x: null, y: null },
-    { id: 5, name: "W5", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W5.jpg"], x: null, y: null },
-    { id: 6, name: "W6", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W6.jpg"], x: null, y: null },
-    { id: 7, name: "W7", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W7.jpg"], x: null, y: null },
-    { id: 8, name: "W8", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W8.jpg"], x: null, y: null },
-    { id: 9, name: "W9", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W9.jpg"], x: null, y: null },
-    { id: 10, name: "W10", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W10.jpg"], x: null, y: null },
-    { id: 11, name: "W11", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W11.jpg"], x: null, y: null },
-    { id: 12, name: "W12", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W12.jpg"], x: null, y: null },
-    { id: 13, name: "W13", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W13.jpg"], x: null, y: null },
-    { id: 14, name: "W14", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W14.jpg"], x: null, y: null },
-    { id: 15, name: "W15", price: 0, deliveriesToBuy: 0, passengers: 0, slots: 0, kg: 0, photos: ["W15.jpg"], x: null, y: null },
+    { id: 1,  title: "Возик", code: "W1",  price: 3100, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W1.jpg"],  x: null, y: null },
+    { id: 2,  title: "Возик", code: "W2",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W2.jpg"],  x: null, y: null },
+    { id: 3,  title: "Возик", code: "W3",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W3.jpg"],  x: null, y: null },
+    { id: 4,  title: "Возик", code: "W4",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W4.jpg"],  x: null, y: null },
+    { id: 5,  title: "Возик", code: "W5",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W5.jpg"],  x: null, y: null },
+    { id: 6,  title: "Возик", code: "W6",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W6.jpg"],  x: null, y: null },
+    { id: 7,  title: "Возик", code: "W7",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W7.jpg"],  x: null, y: null },
+    { id: 8,  title: "Возик", code: "W8",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W8.jpg"],  x: null, y: null },
+    { id: 9,  title: "Возик", code: "W9",  price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W9.jpg"],  x: null, y: null },
+    { id: 10, title: "Возик", code: "W10", price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W10.jpg"], x: null, y: null },
+    { id: 11, title: "Возик", code: "W11", price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W11.jpg"], x: null, y: null },
+    { id: 12, title: "Возик", code: "W12", price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W12.jpg"], x: null, y: null },
+    { id: 13, title: "Возик", code: "W13", price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W13.jpg"], x: null, y: null },
+    { id: 14, title: "Возик", code: "W14", price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W14.jpg"], x: null, y: null },
+    { id: 15, title: "Возик", code: "W15", price: 0,    deliveriesToBuy: 0,  passengers: 0, slots: 0, kg: 0, photos: ["W15.jpg"], x: null, y: null },
   ];
 
   // helpers
@@ -264,7 +286,7 @@
     const s = String(u || "").trim();
     if (!s) return "";
     if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:")) return s;
-    return basePath + s + bust; // ✅ cache bust для фото
+    return basePath + s + bust;
   }
 
   function renderDots(count, activeIndex){
@@ -293,7 +315,10 @@
 
         <div class="rdrBody">
           <div class="titleRow">
-            <div class="name">${esc(w.name)}</div>
+            <div>
+              <div class="name">${esc(w.title || "Возик")}</div>
+              <div class="code">${esc(w.code || "")}</div>
+            </div>
             <div class="idPill">#${w.id}</div>
           </div>
 
@@ -329,14 +354,23 @@
   preload.src = MAP_URL;
 
   function initMap(MAP_WIDTH, MAP_HEIGHT){
-    const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2, zoomControl: true });
+    // ✅ ключовий фікс: вимикаємо zoom/fade анімації -> попап не скейлиться
+    const map = L.map('map', {
+      crs: L.CRS.Simple,
+      minZoom: -2,
+      maxZoom: 2,
+      zoomControl: true,
+      zoomAnimation: false,
+      markerZoomAnimation: false,
+      fadeAnimation: false
+    });
 
     const bounds = [[0,0],[MAP_HEIGHT, MAP_WIDTH]];
     L.imageOverlay(MAP_URL, bounds).addTo(map);
     map.fitBounds(bounds);
     map.setMaxBounds(bounds);
 
-    // ✅ зливаємо: беремо характеристики з WAGONS_DATA, але позиції — зі збереження (якщо є)
+    // зливаємо: дані з коду + позиції зі збереження
     const saved = loadState();
     const savedById = new Map((saved?.wagons || []).map(w => [w.id, w]));
 
@@ -344,21 +378,15 @@
       const s = savedById.get(w.id);
       const out = { ...w };
 
-      // позиції беремо зі збереження
       if (s && typeof s.x === "number" && typeof s.y === "number"){
         out.x = s.x; out.y = s.y;
       }
-
-      // якщо позиції ще нема — тимчасова
       if (out.x == null || out.y == null){
         out.x = Math.round(MAP_WIDTH * (0.55 + (idx%5)*0.04));
         out.y = Math.round(MAP_HEIGHT * (0.25 + Math.floor(idx/5)*0.06));
       }
-
       return out;
     });
-
-    const wagonById = (id) => wagons.find(x => x.id === id);
 
     function openPopupFor(w, marker, photoIndex = 0){
       marker
@@ -397,7 +425,7 @@
         w.y = ll.lat;
         w.x = ll.lng;
 
-        // зберігаємо тільки позиції (щоб не затирати твої цифри/фото)
+        // зберігаємо тільки позиції
         const toSave = wagons.map(x => ({ id: x.id, x: x.x, y: x.y }));
         saveState({ wagons: toSave });
       });
