@@ -206,10 +206,10 @@
     .stat .value{ font-size: 18px; font-weight: 900; letter-spacing: .2px; }
 
     .priceRow{
-   display:flex;
+  display:flex;
   align-items:baseline;
-  justify-content:flex-start;   /* ✅ все зліва */
-  gap: 12px;
+  justify-content:flex-start;
+  gap: 10px;
   padding-top: 10px;
   border-top: 1px solid rgba(255,255,255,.10);
 }
@@ -338,10 +338,10 @@
             <div class="stat"><div class="label">Потрібно доставок для купівлі</div><div class="value">${fmtInt(w.deliveriesToBuy)}</div></div>
           </div>
 
-          <div class="priceRow">
-            <div class="priceLabel">Ціна</div>
-            <div class="priceValue">${fmtPrice(w.price)}</div>
-          </div>
+<div class="priceRow">
+  <span class="priceLabel">Ціна</span>
+  <span class="priceValue">${fmtPriceDot(w.price)} $</span>
+</div>
         </div>
       </div>
     `;
