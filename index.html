@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>RDR2 — Повозки</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -17,30 +17,22 @@
       --gold: #ffe6b2;
     }
 
-    body{
+    html, body{
+      height: 100%;
       margin:0;
       background: var(--bg);
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
       overflow: hidden;
     }
 
-    /* прибираємо дефолтний сірий фон Leaflet */
-    .leaflet-container,
-    .leaflet-pane,
-    .leaflet-map-pane,
-    .leaflet-tile-pane,
-    .leaflet-overlay-pane{
-      background: var(--bg) !important;
-    }
-
     #map{
       position: relative;
-      height:100vh;
-      width:100vw;
+      height:100%;
+      width:100%;
       background: var(--bg);
     }
 
-    /* віньєтка */
+    /* Віньєтка */
     #map::after{
       content:"";
       position: fixed;
@@ -54,152 +46,53 @@
       mix-blend-mode: multiply;
     }
 
-    /* ===== TOP RIGHT CONTROLS ===== */
-    .topControls{
+    /* ===== Top Bar Buttons ===== */
+    .topBar{
       position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 9999;
-      display:flex;
+      top: calc(10px + env(safe-area-inset-top));
+      left: calc(10px + env(safe-area-inset-left));
+      right: calc(10px + env(safe-area-inset-right));
+      display: flex;
       gap: 10px;
-      align-items:center;
+      z-index: 9999;
+      pointer-events: none; /* buttons will re-enable */
     }
 
-    .uiBtn{
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 12px;
-      cursor: pointer;
-      font-weight: 900;
-      background: var(--ui);
-      color: var(--text);
+    .btn{
+      pointer-events: auto;
       border: 1px solid rgba(255,255,255,.14);
+      background: rgba(35,24,14,.90);
+      color: var(--text);
+      font-weight: 900;
+      padding: 10px 12px;
+      border-radius: 14px;
+      cursor: pointer;
       box-shadow: 0 10px 24px rgba(0,0,0,.25);
-      user-select: none;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      user-select:none;
       -webkit-tap-highlight-color: transparent;
     }
-    .uiBtn:hover{ background: rgba(35,24,14,.98); }
+    .btn:hover{ background: rgba(35,24,14,.98); }
 
-    /* ===== COORDS TOAST ===== */
-    .coordsToast{
-      position: fixed;
-      bottom: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 9999;
-      padding: 10px 12px;
-      border-radius: 14px;
-      background: rgba(35,24,14,.90);
-      border: 1px solid rgba(255,255,255,.14);
-      color: var(--text);
-      font-weight: 900;
-      box-shadow: 0 18px 40px rgba(0,0,0,.35);
-      display:none;
-      pointer-events: none;
-    }
+    .btnWide{ flex: 1; justify-content:center; }
+    .btnSmall{ min-width: 118px; justify-content:center; }
 
-    /* ===== SIDEBAR ===== */
-    .sidebar{
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 340px;
-      max-width: 86vw;
-      z-index: 9998;
-      background: rgba(20,14,8,.92);
-      border-right: 1px solid rgba(255,255,255,.10);
-      box-shadow: 20px 0 60px rgba(0,0,0,.35);
-      transform: translateX(-110%);
-      transition: transform .22s ease;
-      display:flex;
-      flex-direction: column;
-      backdrop-filter: blur(6px);
-    }
-    .sidebar.open{ transform: translateX(0); }
-
-    .sideHeader{
-      padding: 14px 14px 10px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-    }
-    .sideTitle{
-      font-weight: 1000;
-      color: var(--text);
-      letter-spacing: .2px;
-      font-size: 16px;
-    }
-    .sideClose{
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: var(--text);
-      font-weight: 1000;
-      cursor: pointer;
-    }
-    .sideClose:hover{ background: rgba(255,255,255,.14); }
-
-    .sideBody{
-      padding: 12px;
-      overflow:auto;
-      flex: 1;
-    }
-
-    .wagonItem{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      padding: 10px 10px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
-      color: var(--text);
-      cursor: pointer;
-      margin-bottom: 10px;
-      user-select: none;
-    }
-    .wagonItem:hover{ background: rgba(255,255,255,.10); }
-    .wagonLeft{
-      display:flex; flex-direction: column; gap: 2px;
-      min-width: 0;
-    }
-    .wagonTop{
-      font-weight: 1000;
-      letter-spacing: .2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .wagonSub{
-      font-size: 12px;
-      opacity: .85;
-      font-weight: 900;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .wagonPill{
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.22);
-      border: 1px solid rgba(255,255,255,.12);
-      color: var(--gold);
-      font-weight: 1100;
-      white-space: nowrap;
-    }
+    /* move Leaflet zoom control down so it doesn't clash with top buttons */
+    .leaflet-top.leaflet-left { top: calc(72px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); }
 
     /* Popup shell */
     .leaflet-popup-content-wrapper { background: transparent; box-shadow:none; }
     .leaflet-popup-content { margin: 0; }
     .leaflet-popup-tip { background: rgba(40,28,16,.92); }
 
-    /* Marker */
+    /* IMPORTANT: make popup not cover whole mobile screen */
+    .leaflet-popup{
+      margin-bottom: 12px;
+    }
+
+    /* ===== Marker ===== */
     .pinWrap{
       position: relative;
       width: 44px; height: 44px;
@@ -235,7 +128,7 @@
     }
     .pinIcon img{ width: 26px; height: 26px; display:block; }
 
-    /* Card */
+    /* ===== Card ===== */
     .rdrCard{
       width: 540px;
       border-radius: 26px;
@@ -247,7 +140,24 @@
       backdrop-filter: blur(2px);
     }
 
-    .rdrTop{ position: relative; height: 290px; background: #1a110a; }
+    /* Mobile: keep popup inside screen and scroll body if needed */
+    @media (max-width: 720px){
+      .rdrCard{
+        width: min(92vw, 560px);
+        max-height: calc(100vh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      }
+    }
+
+    .rdrTop{
+      position: relative;
+      height: 290px;
+      background: #1a110a;
+      flex: 0 0 auto;
+    }
+    @media (max-width: 720px){
+      .rdrTop{ height: 200px; }
+    }
+
     .rdrImg{
       width: 100%;
       height: 100%;
@@ -257,6 +167,7 @@
       background: rgba(0,0,0,.15);
     }
 
+    /* Close button always visible */
     .rdrClose{
       position:absolute; top: 12px; right: 12px;
       width: 34px; height: 34px;
@@ -265,7 +176,8 @@
       color: #fff;
       background: rgba(0,0,0,.35);
       font-size: 20px; line-height: 34px;
-      z-index: 5;
+      z-index: 10;
+      -webkit-tap-highlight-color: transparent;
     }
     .rdrClose:hover { background: rgba(0,0,0,.55); }
 
@@ -278,7 +190,8 @@
       color:#fff;
       background: rgba(0,0,0,.35);
       font-size: 24px; line-height: 48px;
-      z-index: 5;
+      z-index: 10;
+      -webkit-tap-highlight-color: transparent;
     }
     .navBtn:hover{ background: rgba(0,0,0,.55); }
     .navLeft{ left: 14px; }
@@ -292,14 +205,23 @@
       padding: 8px 10px;
       border-radius: 999px;
       background: rgba(0,0,0,.25);
-      z-index: 5;
+      z-index: 10;
     }
     .dot{ width: 8px; height: 8px; border-radius:999px; background: rgba(255,255,255,.35); }
     .dot.active{ background: rgba(255,255,255,.9); }
 
+    /* body scroll area (for mobile) */
     .rdrBody{
       padding: 14px 16px 16px;
       background: linear-gradient(to bottom, rgba(45,30,18,.92), rgba(30,20,12,.92));
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: 420px;
+    }
+    @media (max-width: 720px){
+      .rdrBody{
+        max-height: calc(100vh - 140px - 200px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      }
     }
 
     .titleRow{
@@ -311,7 +233,7 @@
     }
     .titleRow .name{
       font-size: 22px;
-      font-weight: 1000;
+      font-weight: 900;
       letter-spacing: .2px;
     }
     .titleRow .idPill{
@@ -319,7 +241,7 @@
       border-radius: 999px;
       background: rgba(255,255,255,.08);
       border: 1px solid rgba(255,255,255,.12);
-      font-weight: 1100;
+      font-weight: 900;
       color: var(--gold);
       white-space: nowrap;
     }
@@ -337,8 +259,8 @@
       border-radius: 14px;
       padding: 10px 10px;
     }
-    .stat .label{ font-size: 12px; opacity: .88; margin-bottom: 6px; font-weight: 900; }
-    .stat .value{ font-size: 18px; font-weight: 1100; letter-spacing: .2px; }
+    .stat .label{ font-size: 12px; opacity: .88; margin-bottom: 6px; }
+    .stat .value{ font-size: 18px; font-weight: 900; letter-spacing: .2px; }
 
     .priceRow{
       display:flex;
@@ -351,18 +273,18 @@
     .priceLabel{
       font-size: 14px;
       opacity: .90;
-      font-weight: 1100;
+      font-weight: 900;
       color: var(--text);
     }
     .priceValue{
       font-size: 28px;
-      font-weight: 1200;
+      font-weight: 1000;
       letter-spacing: .4px;
       color: var(--gold);
       text-shadow: 0 10px 22px rgba(0,0,0,.35);
     }
 
-    /* group picker */
+    /* ===== Group picker ===== */
     .pickRow{
       margin-bottom: 10px;
       padding: 10px;
@@ -373,7 +295,7 @@
     .pickTitle{
       font-size: 12px;
       opacity: .85;
-      font-weight: 1100;
+      font-weight: 900;
       margin-bottom: 8px;
     }
     .pickBtns{
@@ -385,121 +307,222 @@
       border: 1px solid rgba(255,255,255,.14);
       background: rgba(0,0,0,.18);
       color: var(--text);
-      font-weight: 1100;
+      font-weight: 900;
       padding: 6px 10px;
       border-radius: 999px;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .pickBtn.active{
       background: rgba(255,255,255,.18);
       color: var(--gold);
     }
 
-    @media (max-width: 620px){
-      .rdrCard { width: 92vw; }
-      .rdrTop { height: 220px; }
-      .statsGrid{ grid-template-columns: 1fr; }
+    /* ===== Left Drawer ===== */
+    .drawer{
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: min(420px, 92vw);
+      background: rgba(20,14,8,.92);
+      backdrop-filter: blur(6px);
+      border-right: 1px solid rgba(255,255,255,.10);
+      transform: translateX(-105%);
+      transition: transform .22s ease;
+      z-index: 9998;
+      display:flex;
+      flex-direction: column;
+      padding-top: calc(12px + env(safe-area-inset-top));
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+    .drawer.open{ transform: translateX(0); }
+
+    .drawerHeader{
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      color: var(--text);
+    }
+    .drawerTitle{
+      font-weight: 1000;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+    .drawerClose{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 900;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .drawerList{
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 12px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .wagonRow{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+      color: var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wagonRow:hover{ background: rgba(255,255,255,.09); }
+
+    .wagonLeft{
+      display:flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .wagonMain{
+      font-weight: 1000;
+      font-size: 18px;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wagonSub{
+      opacity: .85;
+      font-weight: 800;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pricePill{
+      flex: 0 0 auto;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: var(--gold);
+      font-weight: 1000;
+      font-size: 18px;
+    }
+
+    /* overlay when drawer open */
+    .scrim{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.25);
+      z-index: 9997;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+    }
+    .scrim.show{
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* prevent popup from being under topbar on mobile */
+    @media (max-width: 720px){
+      .leaflet-popup{ margin-top: calc(10px + env(safe-area-inset-top)); }
     }
   </style>
 </head>
-<body>
 
-  <!-- sidebar -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sideHeader">
-      <div class="sideTitle">Список повозок</div>
-      <button class="sideClose" id="sideClose" type="button">×</button>
+<body>
+  <!-- LEFT DRAWER -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawerHeader">
+      <div class="drawerTitle">Список повозок</div>
+      <button class="drawerClose" id="drawerClose" type="button">×</button>
     </div>
-    <div class="sideBody" id="sideList"></div>
+    <div class="drawerList" id="drawerList"></div>
   </aside>
 
-  <!-- top right buttons -->
-  <div class="topControls">
-    <button class="uiBtn" id="listBtn" type="button">☰ Список</button>
-    <button class="uiBtn" id="coordsBtn" type="button">📍 Координати: Вимк</button>
-    <button class="uiBtn" id="reloadBtn" type="button">⟳ Оновити сторінку</button>
+  <!-- TOP BAR -->
+  <div class="topBar">
+    <button class="btn btnSmall" id="listBtn" type="button">☰ Список</button>
+    <button class="btn btnWide" id="coordsBtn" type="button">📍 Координати: Вимк</button>
+    <button class="btn btnSmall" id="reloadBtn" type="button">⟳ Оновити сторінку</button>
   </div>
 
-  <div class="coordsToast" id="coordsToast"></div>
   <div id="map"></div>
 
 <script>
-  // ===== PATH (GitHub Pages) =====
+  // ===== PATH (GitHub Pages safe) =====
   const basePath = location.pathname.endsWith("/")
     ? location.pathname
     : location.pathname.replace(/[^/]+$/, "");
-
   const bust = `?v=${Date.now()}`;
+
   const MAP_URL   = basePath + "map.jpg" + bust;
   const WAGON_URL = basePath + "wagon.png" + bust;
 
   // ===== DATA =====
+  // Міста (як ти написав)
+  function cityById(id){
+    if (id === 1) return "Saint Denis";
+    if (id === 2) return "Van Horn";
+    if (id === 3) return "Dewberry Creerk";
+    if ([4,5,6,7].includes(id)) return "Valentine";
+    if ([8,9].includes(id)) return "Gorge";
+    if ([10,11,12].includes(id)) return "Strawberry";
+    if (id === 13) return "Blackwater";
+    if ([14,15].includes(id)) return "Tumbleweed";
+    return "";
+  }
+
   const WAGONS_DATA = [
-    { id: 1,  title: "Возик", code: "W1",  price: 3100, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W1.jpg"],  x: 1874, y: 747 },
-    { id: 2,  title: "Возик", code: "W2",  price: 6000, deliveriesToBuy: 80, passengers: 8, slots: 30, kg: 50, photos: ["W2.jpg"],  x: 1969, y: 1182 },
-    { id: 3,  title: "Возик", code: "W3",  price: 3850, deliveriesToBuy: 30, passengers: 3, slots: 40, kg: 100, photos: ["W3.jpg"], x: 1621, y: 989 },
+    { id: 1,  title: "Возик", price: 3100, deliveriesToBuy: 20, passengers: 2,  slots: 0,  kg: 0,   photos: ["W1.jpg"]  },
+    { id: 2,  title: "Возик", price: 6000, deliveriesToBuy: 80, passengers: 8,  slots: 30, kg: 50,  photos: ["W2.jpg"]  },
+    { id: 3,  title: "Возик", price: 3850, deliveriesToBuy: 30, passengers: 3,  slots: 40, kg: 100, photos: ["W3.jpg"]  },
+    { id: 4,  title: "Возик", price: 3050, deliveriesToBuy: 20, passengers: 2,  slots: 0,  kg: 0,   photos: ["W4.jpg"]  },
+    { id: 5,  title: "Возик", price: 3350, deliveriesToBuy: 20, passengers: 2,  slots: 40, kg: 175, photos: ["W5.jpg"]  },
+    { id: 6,  title: "Возик", price: 3250, deliveriesToBuy: 20, passengers: 2,  slots: 30, kg: 125, photos: ["W6.jpg"]  },
+    { id: 7,  title: "Возик", price: 2800, deliveriesToBuy: 15, passengers: 1,  slots: 30, kg: 100, photos: ["W7.jpg"]  },
+    { id: 8,  title: "Возик", price: 2750, deliveriesToBuy: 10, passengers: 1,  slots: 30, kg: 50,  photos: ["W8.jpg"]  },
+    { id: 9,  title: "Возик", price: 3000, deliveriesToBuy: 20, passengers: 2,  slots: 0,  kg: 0,   photos: ["W9.jpg"]  },
+    { id: 10, title: "Возик", price: 5250, deliveriesToBuy: 60, passengers: 6,  slots: 30, kg: 100, photos: ["W10.jpg"] },
+    { id: 11, title: "Возик", price: 8000, deliveriesToBuy: 120,passengers: 12, slots: 30, kg: 50,  photos: ["W11.jpg"] },
+    { id: 12, title: "Возик", price: 7250, deliveriesToBuy: 100,passengers: 10, slots: 30, kg: 50,  photos: ["W12.jpg"] },
+    { id: 13, title: "Возик", price: 2500, deliveriesToBuy: 5, passengers: 1,  slots: 30, kg: 50,  photos: ["W13.jpg"] },
+    { id: 14, title: "Возик", price: 6500, deliveriesToBuy: 80, passengers: 6,  slots: 50, kg: 350, photos: ["W14.jpg"] },
+    { id: 15, title: "Возик", price: 8250, deliveriesToBuy: 120,passengers: 12, slots: 30, kg: 150, photos: ["W15.jpg"] },
+  ].map(w => ({ ...w, city: cityById(w.id) }));
 
-    { id: 4,  title: "Возик", code: "W4",  price: 3050, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W4.jpg"], x: null, y: null },
-    { id: 5,  title: "Возик", code: "W5",  price: 3350, deliveriesToBuy: 20, passengers: 2, slots: 40, kg: 175, photos: ["W5.jpg"], x: null, y: null },
-    { id: 6,  title: "Возик", code: "W6",  price: 3250, deliveriesToBuy: 20, passengers: 2, slots: 30, kg: 125, photos: ["W6.jpg"], x: null, y: null },
-    { id: 7,  title: "Возик", code: "W7",  price: 2800, deliveriesToBuy: 15, passengers: 1, slots: 30, kg: 100, photos: ["W7.jpg"], x: null, y: null },
-
-    { id: 8,  title: "Возик", code: "W8",  price: 2750, deliveriesToBuy: 10, passengers: 1, slots: 30, kg: 50, photos: ["W8.jpg"], x: null, y: null },
-    { id: 9,  title: "Возик", code: "W9",  price: 3000, deliveriesToBuy: 20, passengers: 2, slots: 0, kg: 0, photos: ["W9.jpg"], x: null, y: null },
-
-    { id: 10, title: "Возик", code: "W10", price: 5250, deliveriesToBuy: 60, passengers: 6, slots: 30, kg: 100, photos: ["W10.jpg"], x: null, y: null },
-    { id: 11, title: "Возик", code: "W11", price: 8000, deliveriesToBuy: 120, passengers: 12, slots: 30, kg: 50, photos: ["W11.jpg"], x: null, y: null },
-    { id: 12, title: "Возик", code: "W12", price: 7250, deliveriesToBuy: 100, passengers: 10, slots: 30, kg: 50, photos: ["W12.jpg"], x: null, y: null },
-
-    { id: 13, title: "Возик", code: "W13", price: 2500, deliveriesToBuy: 5, passengers: 1, slots: 30, kg: 50, photos: ["W13.jpg"], x: 1222, y: 763 },
-
-    { id: 14, title: "Возик", code: "W14", price: 6500, deliveriesToBuy: 80, passengers: 6, slots: 50, kg: 350, photos: ["W14.jpg"], x: null, y: null },
-    { id: 15, title: "Возик", code: "W15", price: 8250, deliveriesToBuy: 120, passengers: 12, slots: 30, kg: 150, photos: ["W15.jpg"], x: null, y: null },
-  ];
-
-  // ===== МІСТА ДЛЯ СПИСКУ (і для груп) =====
-  // ти можеш тут міняти назви
-  const CITY_BY_ID = {
-    1: "Saint Denis",
-    2: "Van Horn",
-    3: "Dewberry Creerk",
-    4: "Valentine",
-    5: "Valentine",
-    6: "Valentine",
-    7: "Valentine",
-    8: "Gorge",
-    9: "Gorge",
-    10: "Strawberry",
-    11: "Strawberry",
-    12: "Strawberry",
-    13: "Blackwater",
-    14: "Tumbleweed",
-    15: "Tumbleweed",
-  };
-
-  // ===== GROUPS (координати маркера групи) =====
+  // ГРУПИ (один маркер на групу) + їх координати
+  // ✅ ТУТ ПИШЕШ РОЗТАШУВАННЯ ГРУПИ (x,y) ОДИН РАЗ — бо маркер один
   const GROUPS = [
-    { ids: [1], x: 1874, y: 747 },
-    { ids: [2], x: 1969, y: 1182 },
-    { ids: [3], x: 1621, y: 989 },
-
-    { ids: [4,5,6,7], x: 1315, y: 1181 },
-    { ids: [8,9], x: 1129, y: 1491 },
-    { ids: [10,11,12], x: 1046, y: 922 },
-
-    { ids: [13], x: 1222, y: 763 },
-    { ids: [14,15], x: 318, y: 443 },
+    { ids: [1],        x: 1874, y: 747  },      // Saint Denis
+    { ids: [2],        x: 1969, y: 1182 },      // Van Horn
+    { ids: [3],        x: 1621, y: 989  },      // Dewberry Creerk
+    { ids: [4,5,6,7],  x: 1315, y: 1181 },      // Valentine
+    { ids: [8,9],      x: 1129, y: 1491 },      // Gorge
+    { ids: [10,11,12], x: 1046, y: 922  },      // Strawberry
+    { ids: [13],       x: 1222, y: 763  },      // Blackwater
+    { ids: [14,15],    x: 318,  y: 443  },      // Tumbleweed
   ];
 
   // ===== HELPERS =====
   const num = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
   const fmtInt = (n) => String(Math.round(num(n)));
-
   function fmtPriceDot(n){
     const s = Math.round(num(n)).toString();
     return s.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
-
   const esc = (s) => String(s ?? "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
@@ -522,7 +545,8 @@
 
   function groupLabel(ids){
     if (ids.length === 1) return `#${ids[0]}`;
-    const min = Math.min(...ids), max = Math.max(...ids);
+    const min = Math.min(...ids);
+    const max = Math.max(...ids);
     return `#${min}-${max}`;
   }
 
@@ -591,38 +615,46 @@
     `;
   }
 
-  function groupCardHtml(wagons, groupIds, activeId){
+  function groupCardHtml(wagons, groupIds, activeId, photoIndex = 0){
     const w = wagons.find(x => x.id === activeId);
     if (!w) return "";
-    const raw = cardHtml(w, 0);
+    const raw = cardHtml(w, photoIndex);
     return raw.replace(`<div class="rdrBody">`, `<div class="rdrBody">${groupHeaderHtml(groupIds, activeId)}`);
   }
 
-  // ===== popup bind (щоб кнопки в попапі натискались) =====
-  function bindGroupPopup(wagons, groupIds, activeId, marker){
-    const root = document.querySelector(`.rdrCard[data-id="${activeId}"]`);
-    if (!root) return;
+  // ===== Drawer =====
+  const drawer = document.getElementById("drawer");
+  const scrim  = document.getElementById("scrim");
+  const drawerList = document.getElementById("drawerList");
 
-    L.DomEvent.disableClickPropagation(root);
-    L.DomEvent.disableScrollPropagation(root);
-
-    const imgEl = root.querySelector(".rdrImg");
-    if (imgEl) imgEl.onerror = () => { imgEl.src = WAGON_URL; };
-
-    const closeBtn = root.querySelector('[data-action="close"]');
-    if (closeBtn) closeBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); marker.closePopup(); };
-
-    root.querySelectorAll("[data-pick]").forEach(btn => {
-      btn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const id = parseInt(btn.getAttribute("data-pick"), 10);
-        if (!Number.isFinite(id)) return;
-        marker.setPopupContent(groupCardHtml(wagons, groupIds, id));
-        setTimeout(() => bindGroupPopup(wagons, groupIds, id, marker), 0);
-      };
-    });
+  function openDrawer(){
+    drawer.classList.add("open");
+    scrim.classList.add("show");
+    drawer.setAttribute("aria-hidden", "false");
   }
+  function closeDrawer(){
+    drawer.classList.remove("open");
+    scrim.classList.remove("show");
+    drawer.setAttribute("aria-hidden", "true");
+  }
+
+  document.getElementById("listBtn").onclick = openDrawer;
+  document.getElementById("drawerClose").onclick = closeDrawer;
+  scrim.onclick = closeDrawer;
+
+  // ===== Buttons =====
+  document.getElementById("reloadBtn").onclick = () => location.reload();
+
+  let coordsEnabled = false;
+  const coordsBtn = document.getElementById("coordsBtn");
+  function updateCoordsBtn(){
+    coordsBtn.textContent = coordsEnabled ? "📍 Координати: Увімк" : "📍 Координати: Вимк";
+  }
+  coordsBtn.onclick = () => {
+    coordsEnabled = !coordsEnabled;
+    updateCoordsBtn();
+  };
+  updateCoordsBtn();
 
   // ===== PRELOAD MAP =====
   const preload = new Image();
@@ -631,130 +663,155 @@
   preload.src = MAP_URL;
 
   function initMap(MAP_WIDTH, MAP_HEIGHT){
-    // zoom вниз-праворуч щоб не заважали кнопки
     const map = L.map('map', {
       crs: L.CRS.Simple,
       minZoom: -2,
       maxZoom: 2,
-      zoomControl: false,
+      zoomControl: true,
       zoomAnimation: false,
       markerZoomAnimation: false,
-      fadeAnimation: false
+      fadeAnimation: false,
+      // mobile friendliness
+      tap: true
     });
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     const bounds = [[0,0],[MAP_HEIGHT, MAP_WIDTH]];
     L.imageOverlay(MAP_URL, bounds).addTo(map);
     map.fitBounds(bounds);
     map.setMaxBounds(bounds);
 
-    const wagons = WAGONS_DATA.map((w, idx) => {
-      const out = { ...w };
-      if (out.x == null || out.y == null){
-        out.x = Math.round(MAP_WIDTH * (0.55 + (idx%5)*0.04));
-        out.y = Math.round(MAP_HEIGHT * (0.25 + Math.floor(idx/5)*0.06));
+    // ===== build helpers for groups =====
+    const wagonById = new Map(WAGONS_DATA.map(w => [w.id, w]));
+    const groupByWagonId = new Map();
+    GROUPS.forEach((g, idx) => g.ids.forEach(id => groupByWagonId.set(id, idx)));
+
+    // ===== create markers =====
+    const markersByGroupIndex = new Map();
+
+    function openGroupPopup(groupIndex, activeId, photoIndex = 0){
+      const g = GROUPS[groupIndex];
+      const marker = markersByGroupIndex.get(groupIndex);
+      if (!g || !marker) return;
+
+      const html = groupCardHtml(WAGONS_DATA, g.ids, activeId, photoIndex);
+
+      marker.bindPopup(html, {
+        closeButton: false,
+        maxWidth: 600,
+        autoPan: true,
+        keepInView: true,
+        autoPanPaddingTopLeft: [14, 110],   // keep under top buttons
+        autoPanPaddingBottomRight: [14, 14],
+        className: "rdrPopup"
+      }).openPopup();
+
+      setTimeout(() => bindGroupPopup(g.ids, activeId, marker), 0);
+    }
+
+    function bindGroupPopup(groupIds, activeId, marker){
+      const root = document.querySelector(`.rdrCard[data-id="${activeId}"]`);
+      if (!root) return;
+
+      // IMPORTANT: allow clicking buttons inside popup (mobile fix)
+      L.DomEvent.disableClickPropagation(root);
+      L.DomEvent.disableScrollPropagation(root);
+
+      const w = wagonById.get(activeId);
+      const photos = ((w?.photos && w.photos.length) ? w.photos : ["wagon.png"]).map(resolveUrl).filter(Boolean);
+
+      const getIdx = () => parseInt(root.getAttribute("data-idx"), 10) || 0;
+
+      const imgEl = root.querySelector(".rdrImg");
+      if (imgEl) imgEl.onerror = () => { imgEl.src = WAGON_URL; };
+
+      const closeBtn = root.querySelector('[data-action="close"]');
+      if (closeBtn) closeBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); marker.closePopup(); };
+
+      const prevBtn = root.querySelector('[data-action="prev"]');
+      const nextBtn = root.querySelector('[data-action="next"]');
+
+      if (prevBtn && photos.length > 1){
+        prevBtn.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const idx = (getIdx() - 1 + photos.length) % photos.length;
+          const groupIndex = groupByWagonId.get(activeId);
+          openGroupPopup(groupIndex, activeId, idx);
+        };
       }
-      return out;
-    });
 
-    // ===== MARKERS BY GROUPS (мітки фіксовані) =====
-    const wagonIdToOpener = new Map(); // wagonId -> function open this wagon
+      if (nextBtn && photos.length > 1){
+        nextBtn.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const idx = (getIdx() + 1) % photos.length;
+          const groupIndex = groupByWagonId.get(activeId);
+          openGroupPopup(groupIndex, activeId, idx);
+        };
+      }
 
-    GROUPS.forEach(g => {
-      const label = groupLabel(g.ids);
+      root.querySelectorAll("[data-pick]").forEach(btn => {
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const id = parseInt(btn.getAttribute("data-pick"), 10);
+          const groupIndex = groupByWagonId.get(id);
+          if (!Number.isFinite(id) || groupIndex == null) return;
+          openGroupPopup(groupIndex, id, 0);
+        };
+      });
+    }
 
+    GROUPS.forEach((g, idx) => {
       const icon = L.divIcon({
         className: "",
-        html: markerHtml(label),
+        html: markerHtml(groupLabel(g.ids)),
         iconSize: [44, 44],
         iconAnchor: [0, 0]
       });
 
-      const marker = L.marker([g.y, g.x], { icon, draggable: false }).addTo(map);
+      const marker = L.marker([g.y, g.x], {
+        icon,
+        draggable: false,          // ✅ зафіксовано (не можна рухати)
+        keyboard: false
+      }).addTo(map);
 
-      function openGroup(activeId){
-        marker.bindPopup(
-          groupCardHtml(wagons, g.ids, activeId),
-          { closeButton: false, maxWidth: 600, autoPan: true, keepInView: true }
-        ).openPopup();
-        setTimeout(() => bindGroupPopup(wagons, g.ids, activeId, marker), 0);
-      }
+      markersByGroupIndex.set(idx, marker);
 
-      marker.on("click", () => openGroup(g.ids[0]));
-
-      g.ids.forEach(id => {
-        wagonIdToOpener.set(id, () => {
-          map.setView([g.y, g.x], Math.max(map.getZoom(), 0), { animate: true });
-          openGroup(id);
-        });
-      });
+      marker.on("click", () => openGroupPopup(idx, g.ids[0], 0));
     });
 
-    // ===== COORDS TOGGLE (toast) =====
-    let coordsEnabled = false;
-    const coordsBtn = document.getElementById("coordsBtn");
-    const toast = document.getElementById("coordsToast");
-    let toastTimer = null;
-
-    function showToast(text){
-      toast.textContent = text;
-      toast.style.display = "block";
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { toast.style.display = "none"; }, 1200);
-    }
-
-    coordsBtn.onclick = () => {
-      coordsEnabled = !coordsEnabled;
-      coordsBtn.textContent = coordsEnabled ? "📍 Координати: Увімк" : "📍 Координати: Вимк";
-      if (!coordsEnabled) toast.style.display = "none";
-    };
-
-    map.on('click', (e) => {
-      if (!coordsEnabled) return;
-      showToast(`Y: ${Math.round(e.latlng.lat)}   X: ${Math.round(e.latlng.lng)}`);
-    });
-
-    // ===== SIDEBAR (без W1 і без слова "група") =====
-    const sidebar = document.getElementById("sidebar");
-    const listBtn = document.getElementById("listBtn");
-    const sideClose = document.getElementById("sideClose");
-    const sideList = document.getElementById("sideList");
-
-    function openSidebar(){ sidebar.classList.add("open"); }
-    function closeSidebar(){ sidebar.classList.remove("open"); }
-
-    listBtn.onclick = () => sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
-    sideClose.onclick = closeSidebar;
-
-    sideList.innerHTML = wagons
+    // ===== Drawer list (no W1 / no "група") =====
+    drawerList.innerHTML = WAGONS_DATA
       .slice()
       .sort((a,b) => a.id - b.id)
-      .map(w => {
-        const city = CITY_BY_ID[w.id] || "";
-        return `
-          <div class="wagonItem" data-wagon="${w.id}">
-            <div class="wagonLeft">
-              <div class="wagonTop">#${w.id} — ${esc(w.title || "Возик")}</div>
-              <div class="wagonSub">${esc(city)}</div>
-            </div>
-            <div class="wagonPill">${fmtPriceDot(w.price)} $</div>
+      .map(w => `
+        <div class="wagonRow" data-wid="${w.id}">
+          <div class="wagonLeft">
+            <div class="wagonMain">#${w.id} — ${esc(w.title || "Возик")}</div>
+            <div class="wagonSub">${esc(w.city || "")}</div>
           </div>
-        `;
-      }).join("");
+          <div class="pricePill">${fmtPriceDot(w.price)} $</div>
+        </div>
+      `).join("");
 
-    sideList.querySelectorAll("[data-wagon]").forEach(el => {
-      el.onclick = () => {
-        const id = parseInt(el.getAttribute("data-wagon"), 10);
-        const open = wagonIdToOpener.get(id);
-        if (open){
-          closeSidebar();
-          open();
-        }
+    drawerList.querySelectorAll(".wagonRow").forEach(row => {
+      row.onclick = () => {
+        const id = parseInt(row.getAttribute("data-wid"), 10);
+        const groupIndex = groupByWagonId.get(id);
+        if (!Number.isFinite(id) || groupIndex == null) return;
+
+        closeDrawer();
+
+        const g = GROUPS[groupIndex];
+        map.panTo([g.y, g.x], { animate: true, duration: 0.35 });
+        setTimeout(() => openGroupPopup(groupIndex, id, 0), 220);
       };
     });
 
-    // ===== RELOAD BUTTON =====
-    document.getElementById("reloadBtn").onclick = () => location.reload();
+    // ===== Coordinates click (toggleable) =====
+    map.on('click', (e) => {
+      if (!coordsEnabled) return;
+      alert(`Координати:\nY(lat): ${Math.round(e.latlng.lat)}\nX(lng): ${Math.round(e.latlng.lng)}`);
+    });
   }
 </script>
 </body>
