@@ -55,7 +55,9 @@
       display: flex;
       gap: 10px;
       z-index: 9999;
-      pointer-events: none; /* buttons will re-enable */
+      pointer-events: none;
+      flex-wrap: wrap;           /* ✅ на мобілці кнопки переносяться */
+      align-items: center;
     }
 
     .btn{
@@ -70,6 +72,7 @@
       box-shadow: 0 10px 24px rgba(0,0,0,.25);
       display:flex;
       align-items:center;
+      justify-content:center;
       gap:10px;
       user-select:none;
       -webkit-tap-highlight-color: transparent;
@@ -77,18 +80,36 @@
     }
     .btn:hover{ background: rgba(35,24,14,.98); }
 
-    .btnWide{ flex: 1; justify-content:center; }
-    .btnSmall{ min-width: 118px; justify-content:center; }
+    .btnWide{ flex: 1; }
+    .btnSmall{ min-width: 118px; }
 
-    /* move Leaflet zoom control down so it doesn't clash with top buttons */
-    .leaflet-top.leaflet-left { top: calc(72px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); }
+    /* ✅ На маленьких екранах кнопки стають компактніші */
+    @media (max-width: 420px){
+      .btn{
+        padding: 9px 10px;
+        border-radius: 12px;
+        font-size: 14px;
+        gap: 8px;
+      }
+      .btnSmall{ min-width: 0; flex: 1; }
+      .topBar{ gap: 8px; }
+    }
+
+    /* ✅ Зум-кнопки нижче topBar */
+    .leaflet-top.leaflet-left {
+      top: calc(86px + env(safe-area-inset-top));
+      left: calc(10px + env(safe-area-inset-left));
+    }
+    @media (max-width: 420px){
+      .leaflet-top.leaflet-left {
+        top: calc(94px + env(safe-area-inset-top));
+      }
+    }
 
     /* Popup shell */
     .leaflet-popup-content-wrapper { background: transparent; box-shadow:none; }
     .leaflet-popup-content { margin: 0; }
     .leaflet-popup-tip { background: rgba(40,28,16,.92); }
-
-    /* IMPORTANT: make popup not cover whole mobile screen */
     .leaflet-popup{ margin-bottom: 12px; }
 
     /* ===== Marker ===== */
@@ -138,8 +159,6 @@
       position: relative;
       backdrop-filter: blur(2px);
     }
-
-    /* Mobile: keep popup inside screen and scroll body if needed */
     @media (max-width: 720px){
       .rdrCard{
         width: min(92vw, 560px);
@@ -166,7 +185,6 @@
       background: rgba(0,0,0,.15);
     }
 
-    /* Close button always visible */
     .rdrClose{
       position:absolute; top: 12px; right: 12px;
       width: 34px; height: 34px;
@@ -209,7 +227,6 @@
     .dot{ width: 8px; height: 8px; border-radius:999px; background: rgba(255,255,255,.35); }
     .dot.active{ background: rgba(255,255,255,.9); }
 
-    /* body scroll area (for mobile) */
     .rdrBody{
       padding: 14px 16px 16px;
       background: linear-gradient(to bottom, rgba(45,30,18,.92), rgba(30,20,12,.92));
@@ -418,7 +435,6 @@
       font-size: 18px;
     }
 
-    /* overlay when drawer open */
     .scrim{
       position: fixed;
       inset: 0;
@@ -437,6 +453,21 @@
     @media (max-width: 720px){
       .leaflet-popup{ margin-top: calc(10px + env(safe-area-inset-top)); }
     }
+
+    /* ===== Coords floating button (замість topBar) ===== */
+    .fab{
+      position: fixed;
+      right: calc(12px + env(safe-area-inset-right));
+      bottom: calc(12px + env(safe-area-inset-bottom));
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .fab .btn{
+      pointer-events: auto;
+      border-radius: 999px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
   </style>
 </head>
 
@@ -451,12 +482,16 @@
     <div class="drawerList" id="drawerList"></div>
   </aside>
 
-  <!-- TOP BAR -->
+  <!-- TOP BAR (координати прибрали звідси) -->
   <div class="topBar">
     <button class="btn btnSmall" id="listBtn" type="button">☰ Список</button>
     <button class="btn btnSmall" id="toggleBtn" type="button">🐎 Коники</button>
-    <button class="btn btnWide" id="coordsBtn" type="button">📍 Координати: Вимк</button>
-    <button class="btn btnSmall" id="reloadBtn" type="button">⟳ Оновити сторінку</button>
+    <button class="btn btnSmall" id="reloadBtn" type="button">⟳ Оновити</button>
+  </div>
+
+  <!-- FLOATING COORDS BUTTON -->
+  <div class="fab">
+    <button class="btn" id="coordsBtn" type="button">📍 Вимк</button>
   </div>
 
   <div id="map"></div>
@@ -504,22 +539,21 @@
   ].map(w => ({ ...w, city: cityById(w.id) }));
 
   // ✅ КОНИКИ (приклад). Додавай свої.
-  // x,y — координати на карті (як у повозок).
   const HORSES_DATA = [
-    { id: 1, title: "Кінь", price: 450, photos: ["H1.jpg"], x: 1315, y: 1181 }, // приклад біля Valentine
-    { id: 2, title: "Кінь", price: 900, photos: ["H2.jpg"], x: 1318, y: 1172 }, // приклад
+    { id: 1, title: "Кінь", price: 450, photos: ["H1.jpg"], x: 1315, y: 1181 },
+    { id: 2, title: "Кінь", price: 900, photos: ["H2.jpg"], x: 1318, y: 1172 },
   ];
 
-  // ГРУПИ повозок (один маркер на групу) + їх координати
+  // ГРУПИ повозок (один маркер на групу)
   const GROUPS = [
-    { ids: [1],        x: 1874, y: 747  },      // Saint Denis
-    { ids: [2],        x: 1969, y: 1182 },      // Van Horn
-    { ids: [3],        x: 1621, y: 989  },      // Dewberry Creerk
-    { ids: [4,5,6,7],  x: 1315, y: 1181 },      // Valentine
-    { ids: [8,9],      x: 1129, y: 1491 },      // Gorge
-    { ids: [10,11,12], x: 1046, y: 922  },      // Strawberry
-    { ids: [13],       x: 1222, y: 763  },      // Blackwater
-    { ids: [14,15],    x: 318,  y: 443  },      // Tumbleweed
+    { ids: [1],        x: 1874, y: 747  },
+    { ids: [2],        x: 1969, y: 1182 },
+    { ids: [3],        x: 1621, y: 989  },
+    { ids: [4,5,6,7],  x: 1315, y: 1181 },
+    { ids: [8,9],      x: 1129, y: 1491 },
+    { ids: [10,11,12], x: 1046, y: 922  },
+    { ids: [13],       x: 1222, y: 763  },
+    { ids: [14,15],    x: 318,  y: 443  },
   ];
 
   // ===== HELPERS =====
@@ -688,7 +722,7 @@
   let coordsEnabled = false;
   const coordsBtn = document.getElementById("coordsBtn");
   function updateCoordsBtn(){
-    coordsBtn.textContent = coordsEnabled ? "📍 Координати: Увімк" : "📍 Координати: Вимк";
+    coordsBtn.textContent = coordsEnabled ? "📍 Увімк" : "📍 Вимк";
   }
   coordsBtn.onclick = () => {
     coordsEnabled = !coordsEnabled;
@@ -724,7 +758,7 @@
     const horsesLayer = L.layerGroup(); // спочатку сховано
     let currentMode = "wagons"; // "wagons" | "horses"
 
-    // ===== build helpers for wagon groups =====
+    // ===== helpers for wagon groups =====
     const wagonById = new Map(WAGONS_DATA.map(w => [w.id, w]));
     const groupByWagonId = new Map();
     GROUPS.forEach((g, idx) => g.ids.forEach(id => groupByWagonId.set(id, idx)));
