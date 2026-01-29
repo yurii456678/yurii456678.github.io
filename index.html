@@ -476,11 +476,12 @@
       align-items: center;
       justify-content: center;
       padding: 16px;
+      overflow: hidden; /* ✅ прибирає нижній скрол */
     }
     .accessBox{
       width: min(560px, 92vw);
       max-height: min(78vh, 620px);
-      overflow: auto;
+      overflow: hidden; /* ✅ прибирає нижній скрол всередині */
       -webkit-overflow-scrolling: touch;
       background: rgba(35,24,14,.96);
       border: 1px solid rgba(255,255,255,.14);
@@ -514,16 +515,28 @@
       opacity: .95;
       line-height: 1.35;
     }
+    .accessEmail{
+      display: inline-block;
+      margin-left: 6px;
+      font-weight: 1000;
+      color: #ffe6b2;
+      word-break: break-word;
+    }
     .accessLabel{
       display: block;
       margin-top: 12px;
       font-weight: 900;
       font-size: 13px;
       opacity: .9;
+      text-align: center;
     }
+
+    /* ✅ ЗМІНЕНО: поле вводу коротке і по центру */
     .accessInput{
-      width: 100%;
-      margin-top: 6px;
+      width: 220px;
+      max-width: 100%;
+      margin: 8px auto 0;
+      display: block;
       padding: 10px 12px;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,.14);
@@ -531,14 +544,17 @@
       color: #f3e6cf;
       outline: none;
       font-weight: 900;
-      letter-spacing: .12em;
+      letter-spacing: .18em;
       text-transform: uppercase;
+      text-align: center;
     }
+
     .accessError{
       margin-top: 10px;
       color: #ffcf9a;
       font-weight: 900;
       display: none;
+      text-align: center;
     }
     .accessBtns{
       display: flex;
@@ -602,8 +618,11 @@
         <button class="accessX" id="accessClose" type="button">×</button>
       </div>
 
+      <!-- ✅ ЗМІНЕНО: текст + 100$ + пошта -->
       <div class="accessText">
-        Введи код доступу, щоб відкрити розділ “Коники”.
+        Для отримання доступу до розділу <b>“Коники”</b> потрібно <b>100$</b>.<br>
+        Зверніться на пошту:
+        <span class="accessEmail">ПОШТА_ТУТ</span>
       </div>
 
       <label class="accessLabel" for="accessCode">Код</label>
@@ -1150,7 +1169,7 @@
         const code = normalizeCode(accessCode.value);
         if (HORSES_ACCESS.codes.has(code) && !HORSES_ACCESS.usedCodes.has(code)){
           HORSES_ACCESS.unlocked = true;
-          localStorage.setItem(HORSES_UNLOCK_KEY, "1"); // запам'ятати розблокування
+          localStorage.setItem(HORSES_UNLOCK_KEY, "1");
           HORSES_ACCESS.usedCodes.add(code);
           saveUsedHorseCodes();
           hideAccessModal();
