@@ -56,7 +56,7 @@
       gap: 10px;
       z-index: 9999;
       pointer-events: none;
-      flex-wrap: wrap;           /* ✅ на мобілці кнопки переносяться */
+      flex-wrap: wrap;
       align-items: center;
     }
 
@@ -83,7 +83,6 @@
     .btnWide{ flex: 1; }
     .btnSmall{ min-width: 118px; }
 
-    /* ✅ На маленьких екранах кнопки стають компактніші */
     @media (max-width: 420px){
       .btn{
         padding: 9px 10px;
@@ -95,7 +94,6 @@
       .topBar{ gap: 8px; }
     }
 
-    /* ✅ Зум-кнопки нижче topBar */
     .leaflet-top.leaflet-left {
       top: calc(86px + env(safe-area-inset-top));
       left: calc(10px + env(safe-area-inset-left));
@@ -449,12 +447,11 @@
       pointer-events: auto;
     }
 
-    /* prevent popup from being under topbar on mobile */
     @media (max-width: 720px){
       .leaflet-popup{ margin-top: calc(10px + env(safe-area-inset-top)); }
     }
 
-    /* ===== Coords floating button (замість topBar) ===== */
+    /* ===== Coords floating button ===== */
     .fab{
       position: fixed;
       right: calc(12px + env(safe-area-inset-right));
@@ -482,7 +479,7 @@
     <div class="drawerList" id="drawerList"></div>
   </aside>
 
-  <!-- TOP BAR (координати прибрали звідси) -->
+  <!-- TOP BAR -->
   <div class="topBar">
     <button class="btn btnSmall" id="listBtn" type="button">☰ Список</button>
     <button class="btn btnSmall" id="toggleBtn" type="button">🐎 Коники</button>
@@ -496,6 +493,94 @@
 
   <div id="map"></div>
 
+  <!-- ACCESS MODAL (для коників) -->
+  <div id="accessModal" style="
+    position:fixed; inset:0; z-index:10000;
+    background: rgba(0,0,0,.55);
+    display:none; align-items:center; justify-content:center;
+    padding: 16px;
+  ">
+    <div style="
+      width:min(520px, 92vw);
+      background: rgba(35,24,14,.95);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 18px;
+      box-shadow: 0 26px 70px rgba(0,0,0,.55);
+      color: #f3e6cf;
+      padding: 16px;
+    ">
+      <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+        <div style="font-weight:1000; font-size:18px;">Доступ до “Коники”</div>
+        <button id="accessClose" type="button" style="
+          border: 1px solid rgba(255,255,255,.14);
+          background: rgba(255,255,255,.08);
+          color: #f3e6cf;
+          border-radius: 12px;
+          padding: 8px 10px;
+          font-weight: 900;
+          cursor:pointer;
+        ">×</button>
+      </div>
+
+      <div style="margin-top:10px; opacity:.95; line-height:1.35;">
+        Щоб купити інформацію потрібно <b>100$</b> — зв’яжіться на пошту.
+      </div>
+
+      <label style="display:block; margin-top:12px; font-weight:900; font-size:13px; opacity:.9;">
+        Пошта (впиши пізніше):
+      </label>
+      <input id="accessEmail" placeholder="example@mail.com" type="email" style="
+        width:100%; margin-top:6px;
+        padding: 10px 12px; border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(0,0,0,.18);
+        color:#f3e6cf; outline:none;
+        font-weight:800;
+      " />
+
+      <label style="display:block; margin-top:12px; font-weight:900; font-size:13px; opacity:.9;">
+        Одноразовий код доступу:
+      </label>
+      <input id="accessCode" placeholder="Наприклад: A7F3K9" autocomplete="one-time-code" style="
+        width:100%; margin-top:6px;
+        padding: 10px 12px; border-radius: 12px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(0,0,0,.18);
+        color:#f3e6cf; outline:none;
+        font-weight:900;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      " />
+
+      <div id="accessError" style="margin-top:10px; color:#ffcf9a; font-weight:900; display:none;">
+        Невірний код.
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button id="accessSubmit" type="button" style="
+          flex:1;
+          border: 1px solid rgba(255,255,255,.14);
+          background: rgba(255,255,255,.12);
+          color:#ffe6b2;
+          border-radius: 14px;
+          padding: 12px 14px;
+          font-weight:1000;
+          cursor:pointer;
+        ">Відкрити доступ</button>
+
+        <button id="accessCancel" type="button" style="
+          border: 1px solid rgba(255,255,255,.14);
+          background: rgba(0,0,0,.18);
+          color:#f3e6cf;
+          border-radius: 14px;
+          padding: 12px 14px;
+          font-weight:1000;
+          cursor:pointer;
+        ">Назад</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   // ===== PATH (GitHub Pages safe) =====
   const basePath = location.pathname.endsWith("/")
@@ -505,7 +590,7 @@
 
   const MAP_URL   = basePath + "map.jpg" + bust;
   const WAGON_URL = basePath + "wagon.png" + bust;
-  const HORSE_URL = basePath + "horse.png" + bust; // додай horse.png поруч
+  const HORSE_URL = basePath + "horse.png" + bust;
 
   // ===== DATA =====
   function cityById(id){
@@ -543,6 +628,33 @@
     { id: 1, title: "Кінь", price: 450, photos: ["H1.jpg"], x: 1315, y: 1181 },
     { id: 2, title: "Кінь", price: 900, photos: ["H2.jpg"], x: 1318, y: 1172 },
   ];
+
+  // ===== ACCESS (Коники) =====
+  const HORSES_ACCESS = {
+    // 50 одноразових кодів (літери + цифри)
+    codes: new Set([
+      "A7F3K9","B2Q9M4","C8T1X7","D4H6P2","E9N2R8",
+      "F1K7Z3","G6V2S9","H3J8L1","J9C4W6","K2D7Y8",
+      "L5P1A9","M8R6F2","N1S9B4","P7X3C8","Q4L8D1",
+      "R9M2E7","S2N6G9","T8Q1H4","V3R7J2","W6T9K1",
+      "X1V4L7","Y8W2M6","Z5X9N3","AA7D2P9","AB1F8Q4",
+      "AC6G3R7","AD9H1S2","AE2J7T8","AF8K4V1","AG3L9W6",
+      "AH1M6X2","AJ7N2Y9","AK4P8Z5","AL9Q1A7","AM2R7B3",
+      "AN8S4C6","AP3T9D1","AQ1V6E8","AR7W2F4","AS4X8G9",
+      "AT9Y1H6","AV2Z7J3","AW8A4K1","AX3B9L7","AY1C6M2",
+      "AZ7D2N8","BA4F8P1","BB9G1Q6","BC2H7R3","BD8J4S9"
+    ]),
+    unlocked: false,
+    usedCodes: new Set(JSON.parse(localStorage.getItem("usedHorseCodes") || "[]"))
+  };
+
+  function saveUsedHorseCodes(){
+    localStorage.setItem("usedHorseCodes", JSON.stringify([...HORSES_ACCESS.usedCodes]));
+  }
+
+  function normalizeCode(s){
+    return String(s || "").trim().toUpperCase().replace(/\s+/g, "");
+  }
 
   // ГРУПИ повозок (один маркер на групу)
   const GROUPS = [
@@ -855,7 +967,7 @@
       marker.on("click", () => openGroupPopup(idx, g.ids[0], 0));
     });
 
-    // ===== HORSE MARKERS (поки без групування) =====
+    // ===== HORSE MARKERS =====
     const horseMarkers = new Map();
 
     function openHorsePopup(horseId, photoIndex = 0){
@@ -928,7 +1040,7 @@
       marker.on("click", () => openHorsePopup(h.id, 0));
     });
 
-    // ===== DRAWER rendering (під режим) =====
+    // ===== DRAWER rendering =====
     function renderDrawer(){
       if (currentMode === "wagons"){
         drawerTitleEl.textContent = "Список повозок";
@@ -975,6 +1087,11 @@
             map.panTo([g.y, g.x], { animate: true, duration: 0.35 });
             setTimeout(() => openGroupPopup(groupIndex, id, 0), 220);
           } else {
+            // якщо доступ не відкритий — просто показати модалку
+            if (!HORSES_ACCESS.unlocked){
+              showAccessModal();
+              return;
+            }
             const h = HORSES_DATA.find(x => x.id === id);
             if (!h) return;
             map.panTo([h.y, h.x], { animate: true, duration: 0.35 });
@@ -987,8 +1104,66 @@
     // ===== MODE toggle =====
     const toggleBtn = document.getElementById("toggleBtn");
 
+    // ===== Modal elements =====
+    const accessModal  = document.getElementById("accessModal");
+    const accessClose  = document.getElementById("accessClose");
+    const accessCancel = document.getElementById("accessCancel");
+    const accessSubmit = document.getElementById("accessSubmit");
+    const accessCode   = document.getElementById("accessCode");
+    const accessError  = document.getElementById("accessError");
+
+    function showAccessModal(){
+      accessError.style.display = "none";
+      accessCode.value = "";
+      accessModal.style.display = "flex";
+      setTimeout(() => accessCode.focus(), 50);
+    }
+
+    function hideAccessModal(){
+      accessModal.style.display = "none";
+    }
+
+    function denyHorsesGoBackToWagons(){
+      currentMode = "wagons";
+      applyMode();
+    }
+
+    accessClose.onclick = () => { hideAccessModal(); denyHorsesGoBackToWagons(); };
+    accessCancel.onclick = () => { hideAccessModal(); denyHorsesGoBackToWagons(); };
+
+    accessCode.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") accessSubmit.click();
+    });
+
+    accessSubmit.onclick = () => {
+      const code = normalizeCode(accessCode.value);
+
+      if (HORSES_ACCESS.codes.has(code) && !HORSES_ACCESS.usedCodes.has(code)){
+        HORSES_ACCESS.unlocked = true;
+        HORSES_ACCESS.usedCodes.add(code);
+        saveUsedHorseCodes();
+        hideAccessModal();
+        applyMode(); // лишаємося в horses
+      } else {
+        accessError.style.display = "block";
+      }
+    };
+
+    accessModal.addEventListener("click", (e) => {
+      if (e.target === accessModal){
+        hideAccessModal();
+        denyHorsesGoBackToWagons();
+      }
+    });
+
     function applyMode(){
       map.closePopup();
+
+      // якщо хочуть перейти в horses — перевір доступ
+      if (currentMode === "horses" && !HORSES_ACCESS.unlocked){
+        showAccessModal();
+        return;
+      }
 
       if (currentMode === "wagons"){
         if (map.hasLayer(horsesLayer)) map.removeLayer(horsesLayer);
