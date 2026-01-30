@@ -15,8 +15,9 @@
       --ui2: rgba(45,30,18,.92);
       --text: #f3e6cf;
       --gold: #ffe6b2;
-      --accent: #3dff6a;
-      --danger: #ffcf9a;
+
+      /* NEW: red accent for locked horses */
+      --accent: #ff3d3d;
     }
 
     html, body{
@@ -82,6 +83,7 @@
     }
     .btn:hover{ background: rgba(35,24,14,.98); }
 
+    .btnWide{ flex: 1; }
     .btnSmall{ min-width: 118px; }
 
     @media (max-width: 420px){
@@ -95,16 +97,17 @@
       .topBar{ gap: 8px; }
     }
 
-    /* Маленький зелений блималий кружок на "Коники" */
+    /* ===== Red blinking dot for locked Horses ===== */
     .horseDot{
       width: 8px;
       height: 8px;
       border-radius: 999px;
       background: var(--accent);
-      box-shadow: 0 0 10px rgba(61,255,106,.65);
+      box-shadow: 0 0 10px rgba(255,61,61,.70);
       display: inline-block;
       animation: horseBlink 1s infinite;
       flex: 0 0 auto;
+      margin-left: 8px;
     }
     .horseDot.isHidden{ display:none; }
     @keyframes horseBlink{
@@ -165,7 +168,7 @@
     }
     .pinIcon img{ width: 26px; height: 26px; display:block; }
 
-    /* ===== Card ===== */
+    /* ===== Card (ФІКС: ціна завжди видима + норм скрол) ===== */
     .rdrCard{
       width: clamp(320px, 92vw, 560px);
       border-radius: 26px;
@@ -175,8 +178,10 @@
       box-shadow: 0 26px 70px rgba(0,0,0,.55);
       position: relative;
       backdrop-filter: blur(2px);
+
       display: flex;
       flex-direction: column;
+
       max-height: calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     }
     @media (max-width: 720px){
@@ -256,9 +261,11 @@
     .rdrBody{
       padding: 14px 16px 16px;
       background: linear-gradient(to bottom, rgba(45,30,18,.92), rgba(30,20,12,.92));
+
       flex: 1 1 auto;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
+
       max-height: none;
     }
 
@@ -328,11 +335,14 @@
       align-items:baseline;
       justify-content:flex-start;
       gap: 10px;
+
       position: sticky;
       bottom: 0;
+
       padding-top: 12px;
       padding-bottom: calc(10px + env(safe-area-inset-bottom));
       margin-top: 10px;
+
       border-top: 1px solid rgba(255,255,255,.10);
       background: linear-gradient(to top, rgba(30,20,12,.98), rgba(30,20,12,.60));
       backdrop-filter: blur(2px);
@@ -601,7 +611,7 @@
     }
     .accessError{
       margin-top: 10px;
-      color: var(--danger);
+      color: #ffcf9a;
       font-weight: 900;
       display: none;
       text-align: center;
@@ -636,7 +646,6 @@
       font-weight: 1000;
       cursor: pointer;
     }
-
     .spinner{
       width: 14px;
       height: 14px;
@@ -647,25 +656,6 @@
       animation: spin .8s linear infinite;
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
-
-    /* ===== small bottom error for map load ===== */
-    .toast{
-      position: fixed;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
-      z-index: 20000;
-      background: rgba(35,24,14,.96);
-      border: 1px solid rgba(255,255,255,.14);
-      color: #f3e6cf;
-      border-radius: 14px;
-      padding: 12px 14px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.55);
-      font-weight: 900;
-      display: none;
-    }
-    .toast.show{ display:block; }
-    .toast small{ opacity:.9; font-weight:800; }
   </style>
 </head>
 
@@ -687,7 +677,7 @@
       <button class="btn btnSmall" id="listBtn" type="button">☰ Список</button>
 
       <button class="btn btnSmall" id="toggleBtn" type="button">
-        <span id="toggleText">🐎 Коники</span>
+        🐎 Коники
         <span class="horseDot" id="horseDot" aria-hidden="true"></span>
       </button>
 
@@ -731,30 +721,22 @@
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
   <script>
     // ===== PATH (GitHub Pages safe) =====
     const basePath = location.pathname.endsWith("/")
       ? location.pathname
       : location.pathname.replace(/[^/]+$/, "");
-
     const bust = `?v=${Date.now()}`;
+
     const MAP_URL   = basePath + "map.jpg"   + bust;
     const WAGON_URL = basePath + "wagon.png" + bust;
     const HORSE_URL = basePath + "horse.png" + bust;
 
-    // ===== WORKER (ONLY SOURCE OF TRUTH) =====
+    // ===== WORKER (KV codes) =====
     const WORKER_BASE = "https://shiny-mud-0b7d.yurromanow.workers.dev";
     const ENDPOINT_VERIFY = "/verify";
     const ENDPOINT_STATUS = "/status";
     const HORSES_TOKEN_KEY = "horses_access_token_v1";
-
-    function toast(msg){
-      const el = document.getElementById("toast");
-      el.innerHTML = msg;
-      el.classList.add("show");
-    }
 
     function getToken(){
       try { return localStorage.getItem(HORSES_TOKEN_KEY) || ""; } catch { return ""; }
@@ -791,10 +773,6 @@
       return { res, data };
     }
 
-    function normalizeCode(s){
-      return String(s || "").trim().toUpperCase().replace(/\s+/g, "");
-    }
-
     async function verifyWithWorker(code){
       const { res, data } = await workerFetch(ENDPOINT_VERIFY, {
         method: "POST",
@@ -806,7 +784,11 @@
         return { ok:false, error: (data && (data.error || data.message)) || ("Помилка Worker ("+res.status+")") };
       }
 
-      if (data && (data.ok === true || data.valid === true || data.allowed === true)){
+      if (data && data.ok === true){
+        return { ok:true, token: data.token || "" };
+      }
+
+      if (data && (data.valid === true || data.allowed === true)){
         return { ok:true, token: data.token || "" };
       }
 
@@ -817,11 +799,18 @@
       try{
         const { res, data } = await workerFetch(ENDPOINT_STATUS, { method: "GET" });
         if (!res.ok) return { ok:false };
+
         if (data && (data.ok === true || data.valid === true || data.allowed === true)) return { ok:true };
+        if (data && typeof data.raw === "string" && data.raw.toLowerCase().includes("ok")) return { ok:true };
+
         return { ok:false };
       } catch {
         return { ok:false };
       }
+    }
+
+    function normalizeCode(s){
+      return String(s || "").trim().toUpperCase().replace(/\s+/g, "");
     }
 
     // ===== DATA (WAGONS) =====
@@ -838,21 +827,21 @@
     }
 
     const WAGONS_DATA = [
-      { id: 1,  title: "Возик", price: 3100, deliveriesToBuy: 20,  passengers: 2,  slots: 0,  kg: 0  },
-      { id: 2,  title: "Возик", price: 6000, deliveriesToBuy: 80,  passengers: 8,  slots: 30, kg: 50 },
-      { id: 3,  title: "Возик", price: 3850, deliveriesToBuy: 30,  passengers: 3,  slots: 40, kg: 100},
-      { id: 4,  title: "Возик", price: 3050, deliveriesToBuy: 20,  passengers: 2,  slots: 0,  kg: 0  },
-      { id: 5,  title: "Возик", price: 3350, deliveriesToBuy: 20,  passengers: 2,  slots: 40, kg: 175},
-      { id: 6,  title: "Возик", price: 3250, deliveriesToBuy: 20,  passengers: 2,  slots: 30, kg: 125},
-      { id: 7,  title: "Возик", price: 2800, deliveriesToBuy: 15,  passengers: 1,  slots: 30, kg: 100},
-      { id: 8,  title: "Возик", price: 2750, deliveriesToBuy: 10,  passengers: 1,  slots: 30, kg: 50 },
-      { id: 9,  title: "Возик", price: 3000, deliveriesToBuy: 20,  passengers: 2,  slots: 0,  kg: 0  },
-      { id: 10, title: "Возик", price: 5250, deliveriesToBuy: 60,  passengers: 6,  slots: 30, kg: 100},
-      { id: 11, title: "Возик", price: 8000, deliveriesToBuy: 120, passengers: 12, slots: 30, kg: 50 },
-      { id: 12, title: "Возик", price: 7250, deliveriesToBuy: 100, passengers: 10, slots: 30, kg: 50 },
-      { id: 13, title: "Возик", price: 2500, deliveriesToBuy: 5,   passengers: 1,  slots: 30, kg: 50 },
-      { id: 14, title: "Возик", price: 6500, deliveriesToBuy: 80,  passengers: 6,  slots: 50, kg: 350},
-      { id: 15, title: "Возик", price: 8250, deliveriesToBuy: 120, passengers: 12, slots: 30, kg: 150},
+      { id: 1,  title: "Возик", price: 3100, deliveriesToBuy: 20,  passengers: 2,  slots: 0,  kg: 0,   photos: ["W1.jpg"]  },
+      { id: 2,  title: "Возик", price: 6000, deliveriesToBuy: 80,  passengers: 8,  slots: 30, kg: 50,  photos: ["W2.jpg"]  },
+      { id: 3,  title: "Возик", price: 3850, deliveriesToBuy: 30,  passengers: 3,  slots: 40, kg: 100, photos: ["W3.jpg"]  },
+      { id: 4,  title: "Возик", price: 3050, deliveriesToBuy: 20,  passengers: 2,  slots: 0,  kg: 0,   photos: ["W4.jpg"]  },
+      { id: 5,  title: "Возик", price: 3350, deliveriesToBuy: 20,  passengers: 2,  slots: 40, kg: 175, photos: ["W5.jpg"]  },
+      { id: 6,  title: "Возик", price: 3250, deliveriesToBuy: 20,  passengers: 2,  slots: 30, kg: 125, photos: ["W6.jpg"]  },
+      { id: 7,  title: "Возик", price: 2800, deliveriesToBuy: 15,  passengers: 1,  slots: 30, kg: 100, photos: ["W7.jpg"]  },
+      { id: 8,  title: "Возик", price: 2750, deliveriesToBuy: 10,  passengers: 1,  slots: 30, kg: 50,  photos: ["W8.jpg"]  },
+      { id: 9,  title: "Возик", price: 3000, deliveriesToBuy: 20,  passengers: 2,  slots: 0,  kg: 0,   photos: ["W9.jpg"]  },
+      { id: 10, title: "Возик", price: 5250, deliveriesToBuy: 60,  passengers: 6,  slots: 30, kg: 100, photos: ["W10.jpg"] },
+      { id: 11, title: "Возик", price: 8000, deliveriesToBuy: 120, passengers: 12, slots: 30, kg: 50,  photos: ["W11.jpg"] },
+      { id: 12, title: "Возик", price: 7250, deliveriesToBuy: 100, passengers: 10, slots: 30, kg: 50,  photos: ["W12.jpg"] },
+      { id: 13, title: "Возик", price: 2500, deliveriesToBuy: 5,   passengers: 1,  slots: 30, kg: 50,  photos: ["W13.jpg"] },
+      { id: 14, title: "Возик", price: 6500, deliveriesToBuy: 80,  passengers: 6,  slots: 50, kg: 350, photos: ["W14.jpg"] },
+      { id: 15, title: "Возик", price: 8250, deliveriesToBuy: 120, passengers: 12, slots: 30, kg: 150, photos: ["W15.jpg"] },
     ].map(w => ({ ...w, city: cityById(w.id) }));
 
     // ===== DATA (HORSES) =====
@@ -928,7 +917,8 @@
       ...h,
       title: `Кінь - ${h.id}`,
       fullName: `${h.breed} ${h.coat}`.trim(),
-      desc: BREED_DESC[h.breed] || "Кляча з великим серцем і нульовими амбіціями."
+      desc: BREED_DESC[h.breed] || "Кляча з великим серцем і нульовими амбіціями.",
+      photos: [`H${h.id}.jpg`]
     }));
 
     const HORSE_GROUPS = [
@@ -1010,17 +1000,9 @@
       `;
     }
 
-    // ===== CARDS (auto photo by id) =====
-    function wagonPhotosById(id){
-      // якщо раптом файлу нема — img.onerror підставить wagon.png
-      return [`W${id}.jpg`].map(resolveUrl).filter(Boolean);
-    }
-    function horsePhotosById(id){
-      return [`H${id}.jpg`].map(resolveUrl).filter(Boolean);
-    }
-
     function cardHtml(w, photoIndex){
-      const photos = wagonPhotosById(w.id);
+      const rawPhotos = (w.photos && w.photos.length) ? w.photos : ["wagon.png"];
+      const photos = rawPhotos.map(resolveUrl).filter(Boolean);
       const idx = Math.max(0, Math.min(photoIndex ?? 0, photos.length-1));
       const src = photos[idx] || WAGON_URL;
 
@@ -1061,7 +1043,8 @@
     }
 
     function horseCardHtml(h, photoIndex){
-      const photos = horsePhotosById(h.id);
+      const rawPhotos = (h.photos && h.photos.length) ? h.photos : ["horse.png"];
+      const photos = rawPhotos.map(resolveUrl).filter(Boolean);
       const idx = Math.max(0, Math.min(photoIndex ?? 0, photos.length-1));
       const src = photos[idx] || HORSE_URL;
 
@@ -1097,7 +1080,7 @@
       return raw.replace(`<div class="rdrBody">`, `<div class="rdrBody">${groupHeaderHtml(groupIds, activeId, "Вибери коника:")}`);
     }
 
-    // ===== UI refs =====
+    // ===== Drawer =====
     const appRoot = document.getElementById("appRoot");
     const drawer = document.getElementById("drawer");
     const scrim  = document.getElementById("scrim");
@@ -1119,6 +1102,7 @@
     document.getElementById("drawerClose").onclick = closeDrawer;
     scrim.onclick = closeDrawer;
 
+    // ===== Buttons =====
     document.getElementById("reloadBtn").onclick = () => location.reload();
 
     let coordsEnabled = false;
@@ -1132,44 +1116,11 @@
     };
     updateCoordsBtn();
 
-// ===== PRELOAD MAP (robust) =====
-(async () => {
-  try {
-    // 1) скачуємо файл як blob
-    const r = await fetch(MAP_URL, { cache: "no-store" });
-    if (!r.ok) throw new Error("map fetch failed: " + r.status);
-
-    const blob = await r.blob();
-
-    // 2) дістаємо розміри картинки
-    let w = 0, h = 0;
-
-    // сучасний варіант
-    if ("createImageBitmap" in window) {
-      const bmp = await createImageBitmap(blob);
-      w = bmp.width; h = bmp.height;
-      try { bmp.close(); } catch {}
-    } else {
-      // fallback
-      const url = URL.createObjectURL(blob);
-      const img = new Image();
-      await new Promise((ok, bad) => {
-        img.onload = ok;
-        img.onerror = bad;
-        img.src = url;
-      });
-      w = img.naturalWidth; h = img.naturalHeight;
-      URL.revokeObjectURL(url);
-    }
-
-    if (!w || !h) throw new Error("map size is 0");
-
-    initMap(w, h);
-  } catch (e) {
-    console.error(e);
-    alert("Не можу ініціалізувати карту. Відкрий Console (F12) і глянь помилку.");
-  }
-})();
+    // ===== PRELOAD MAP =====
+    const preload = new Image();
+    preload.onload = () => initMap(preload.width, preload.height);
+    preload.onerror = () => alert("Не можу завантажити map.jpg. Перевір файл map.jpg поруч з index.html");
+    preload.src = MAP_URL;
 
     function initMap(MAP_WIDTH, MAP_HEIGHT){
       const map = L.map('map', {
@@ -1229,7 +1180,8 @@
         L.DomEvent.disableClickPropagation(root);
         L.DomEvent.disableScrollPropagation(root);
 
-        const photos = wagonPhotosById(activeId);
+        const w = wagonById.get(activeId);
+        const photos = ((w?.photos && w.photos.length) ? w.photos : ["wagon.png"]).map(resolveUrl).filter(Boolean);
         const getIdx = () => parseInt(root.getAttribute("data-idx"), 10) || 0;
 
         const imgEl = root.querySelector(".rdrImg");
@@ -1310,7 +1262,8 @@
         L.DomEvent.disableClickPropagation(root);
         L.DomEvent.disableScrollPropagation(root);
 
-        const photos = horsePhotosById(activeId);
+        const h = horseById.get(activeId);
+        const photos = ((h?.photos && h.photos.length) ? h.photos : ["horse.png"]).map(resolveUrl).filter(Boolean);
         const getIdx = () => parseInt(root.getAttribute("data-idx"), 10) || 0;
 
         const imgEl = root.querySelector(".rdrImg");
@@ -1367,7 +1320,6 @@
 
       // ===== Access Modal / Toggle =====
       const toggleBtn = document.getElementById("toggleBtn");
-      const toggleText = document.getElementById("toggleText");
       const horseDot = document.getElementById("horseDot");
 
       const accessModal  = document.getElementById("accessModal");
@@ -1384,7 +1336,7 @@
 
       function setUnlocked(v){
         horsesUnlocked = !!v;
-        horseDot.classList.toggle("isHidden", horsesUnlocked);
+        horseDot.classList.toggle("isHidden", horsesUnlocked); // hidden when unlocked
       }
 
       function setAccessBusy(v){
@@ -1402,18 +1354,19 @@
         accessCode.value = "";
         accessModal.style.display = "flex";
         accessModal.setAttribute("aria-hidden", "false");
+
+        // hide main app for a11y
         appRoot.setAttribute("aria-hidden", "true");
+
         setAccessBusy(false);
         setTimeout(() => accessCode.focus(), 50);
       }
-
       function hideAccessModal(){
         if (accessBusy) return;
         accessModal.style.display = "none";
         accessModal.setAttribute("aria-hidden", "true");
         appRoot.removeAttribute("aria-hidden");
       }
-
       function denyHorsesGoBackToWagons(){
         currentMode = "wagons";
         applyMode();
@@ -1545,11 +1498,10 @@
         if (currentMode === "wagons"){
           if (map.hasLayer(horsesLayer)) map.removeLayer(horsesLayer);
           if (!map.hasLayer(wagonsLayer)) wagonsLayer.addTo(map);
-          toggleText.textContent = "🐎 Коники";
+          // text of first child stays; we don't touch your emoji order here
         } else {
           if (map.hasLayer(wagonsLayer)) map.removeLayer(wagonsLayer);
           if (!map.hasLayer(horsesLayer)) horsesLayer.addTo(map);
-          toggleText.textContent = "🛒 Повозки";
         }
 
         renderDrawer();
@@ -1562,7 +1514,7 @@
 
       // ===== INIT access state from token =====
       (async function initAccess(){
-        setUnlocked(false); // default locked -> dot visible
+        setUnlocked(false); // locked => red blink visible
 
         const token = getToken();
         if (!token){
