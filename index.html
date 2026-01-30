@@ -1132,14 +1132,44 @@
     };
     updateCoordsBtn();
 
-    // ===== PRELOAD MAP =====
-    const preload = new Image();
-    preload.onload = () => initMap(preload.width, preload.height);
-    preload.onerror = () => {
-      console.error("map.jpg load error:", MAP_URL);
-      toast(`⚠️ Не можу завантажити <b>map.jpg</b>.<br><small>Перевір що файл <b>map.jpg</b> лежить поруч з <b>index.html</b>.</small>`);
-    };
-    preload.src = MAP_URL;
+// ===== PRELOAD MAP (robust) =====
+(async () => {
+  try {
+    // 1) скачуємо файл як blob
+    const r = await fetch(MAP_URL, { cache: "no-store" });
+    if (!r.ok) throw new Error("map fetch failed: " + r.status);
+
+    const blob = await r.blob();
+
+    // 2) дістаємо розміри картинки
+    let w = 0, h = 0;
+
+    // сучасний варіант
+    if ("createImageBitmap" in window) {
+      const bmp = await createImageBitmap(blob);
+      w = bmp.width; h = bmp.height;
+      try { bmp.close(); } catch {}
+    } else {
+      // fallback
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      await new Promise((ok, bad) => {
+        img.onload = ok;
+        img.onerror = bad;
+        img.src = url;
+      });
+      w = img.naturalWidth; h = img.naturalHeight;
+      URL.revokeObjectURL(url);
+    }
+
+    if (!w || !h) throw new Error("map size is 0");
+
+    initMap(w, h);
+  } catch (e) {
+    console.error(e);
+    alert("Не можу ініціалізувати карту. Відкрий Console (F12) і глянь помилку.");
+  }
+})();
 
     function initMap(MAP_WIDTH, MAP_HEIGHT){
       const map = L.map('map', {
