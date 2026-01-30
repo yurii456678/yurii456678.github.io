@@ -146,33 +146,36 @@
     }
     .pinIcon img{ width: 26px; height: 26px; display:block; }
 
-    /* ===== Card (АДАПТИВ + ЗАОКРУГЛЕННЯ) ===== */
+    /* ===== Card (ФІКС: ціна завжди видима + норм скрол) ===== */
     .rdrCard{
       width: clamp(320px, 92vw, 560px);
       border-radius: 26px;
-      overflow: hidden; /* щоб заокруглення працювало */
+      overflow: hidden;
       background: var(--ui2);
       color: var(--text);
       box-shadow: 0 26px 70px rgba(0,0,0,.55);
       position: relative;
       backdrop-filter: blur(2px);
+
+      /* NEW */
+      display: flex;
+      flex-direction: column;
+
+      /* NEW: обмеження по екрану, щоб не обрізало низ */
+      max-height: calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     }
     @media (max-width: 720px){
       .rdrCard{
         border-radius: 22px;
-        max-height: calc(100vh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100vh - 120px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       }
     }
 
-    /* ВЕРХ з фото: інтерактивна висота під співвідношення фото */
     .rdrTop{
       position: relative;
       background: #1a110a;
       flex: 0 0 auto;
-
-      /* дефолтне співвідношення, JS поставить реальне */
       aspect-ratio: var(--ar, 16 / 9);
-
       border-top-left-radius: 26px;
       border-top-right-radius: 26px;
       overflow: hidden;
@@ -184,11 +187,10 @@
       }
     }
 
-    /* Фото */
     .rdrImg{
       width: 100%;
       height: 100%;
-      object-fit: cover; /* якщо хочеш без обрізки: заміни на contain */
+      object-fit: cover;
       display:block;
       filter: saturate(.95) contrast(1.05);
       background: rgba(0,0,0,.15);
@@ -239,14 +241,14 @@
     .rdrBody{
       padding: 14px 16px 16px;
       background: linear-gradient(to bottom, rgba(45,30,18,.92), rgba(30,20,12,.92));
+
+      /* NEW: тіло займає весь доступний простір і скролиться */
+      flex: 1 1 auto;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
-      max-height: 420px;
-    }
-    @media (max-width: 720px){
-      .rdrBody{
-        max-height: calc(100vh - 140px - 40vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-      }
+
+      /* NEW: забираємо старі max-height, бо вони й різали ціну */
+      max-height: none;
     }
 
     .titleRow{
@@ -310,13 +312,23 @@
     .stat .label{ font-size: 12px; opacity: .88; margin-bottom: 6px; }
     .stat .value{ font-size: 18px; font-weight: 900; letter-spacing: .2px; }
 
+    /* NEW: ціна липне знизу, щоб її не “з’їдало” */
     .priceRow{
       display:flex;
       align-items:baseline;
       justify-content:flex-start;
       gap: 10px;
-      padding-top: 10px;
+
+      position: sticky;
+      bottom: 0;
+
+      padding-top: 12px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      margin-top: 10px;
+
       border-top: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(to top, rgba(30,20,12,.98), rgba(30,20,12,.60));
+      backdrop-filter: blur(2px);
     }
     .priceLabel{
       font-size: 14px;
@@ -641,7 +653,7 @@
 
   <div id="map"></div>
 
-  <!-- ACCESS MODAL (потрібен для JS!) -->
+  <!-- ACCESS MODAL -->
   <div class="accessModal" id="accessModal" aria-hidden="true">
     <div class="accessBox" role="dialog" aria-modal="true">
       <div class="accessHead">
@@ -658,7 +670,7 @@
       <label class="accessLabel" for="accessCode">Код</label>
       <input class="accessInput" id="accessCode" autocomplete="off" inputmode="latin" />
 
-      <div class="accessError" id="accessError">Невірний код або код вже використано на цьому пристрої.</div>
+      <div class="accessError" id="accessError">Невірний код.</div>
 
       <div class="accessBtns">
         <button class="accessBtnPrimary" id="accessSubmit" type="button">Відкрити</button>
@@ -720,7 +732,7 @@
       "Kladruber": "Рідкісний і сильний: спокійний, “стедді”, універсальний під різні задачі.",
       "Andalusian": "Компактний бойовий: міцний, з хорошими здоров’ям і стаміною.",
       "Ardennes": "Важкий бойовий: дуже міцний, сміливий і витривалий у сутичках.",
-      "Бідося": "Дешева кляча: базовий варіант “аби їхало”."
+      "Бідося": "Кляча-легенда: їде, страждає і робить вигляд, що так і треба."
     };
 
     const HORSES_DATA = [
@@ -794,10 +806,9 @@
       { ids: [37,38,39,40,41,42],         x: 1038, y: 920  },
       { ids: [43,44,45,46,47,48],         x: 1221, y: 763  },
     ];
-    
-    // ===== ACCESS (Коники) =====
+
+    // ===== ACCESS (Коники) — НЕ одноразові коди =====
     const HORSES_UNLOCK_KEY = "horsesUnlocked";
-    const USED_CODES_KEY    = "usedHorseCodes";
 
     const HORSES_ACCESS = {
       codes: new Set([
@@ -813,12 +824,8 @@
         "AZ7D2N8","BA4F8P1","BB9G1Q6","BC2H7R3","BD8J4S9"
       ]),
       unlocked: localStorage.getItem(HORSES_UNLOCK_KEY) === "1",
-      usedCodes: new Set(JSON.parse(localStorage.getItem(USED_CODES_KEY) || "[]"))
     };
 
-    function saveUsedHorseCodes(){
-      localStorage.setItem(USED_CODES_KEY, JSON.stringify([...HORSES_ACCESS.usedCodes]));
-    }
     function normalizeCode(s){
       return String(s || "").trim().toUpperCase().replace(/\s+/g, "");
     }
@@ -1309,13 +1316,12 @@
         if (e.key === "Enter") accessSubmit.click();
       });
 
+      // НЕ одноразові коди: тільки перевірка чи є в списку
       accessSubmit.onclick = () => {
         const code = normalizeCode(accessCode.value);
-        if (HORSES_ACCESS.codes.has(code) && !HORSES_ACCESS.usedCodes.has(code)){
+        if (HORSES_ACCESS.codes.has(code)){
           HORSES_ACCESS.unlocked = true;
           localStorage.setItem(HORSES_UNLOCK_KEY, "1");
-          HORSES_ACCESS.usedCodes.add(code);
-          saveUsedHorseCodes();
           hideAccessModal();
           applyMode();
         } else {
