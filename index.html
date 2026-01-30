@@ -15,9 +15,6 @@
       --ui2: rgba(45,30,18,.92);
       --text: #f3e6cf;
       --gold: #ffe6b2;
-
-      /* NEW: red accent for locked horses */
-      --accent: #ff3d3d;
     }
 
     html, body{
@@ -97,25 +94,6 @@
       .topBar{ gap: 8px; }
     }
 
-    /* ===== Red blinking dot for locked Horses ===== */
-    .horseDot{
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 10px rgba(255,61,61,.70);
-      display: inline-block;
-      animation: horseBlink 1s infinite;
-      flex: 0 0 auto;
-      margin-left: 8px;
-    }
-    .horseDot.isHidden{ display:none; }
-    @keyframes horseBlink{
-      0%, 60% { opacity: 1; transform: scale(1); }
-      80%     { opacity: .25; transform: scale(.85); }
-      100%    { opacity: 1; transform: scale(1); }
-    }
-
     .leaflet-top.leaflet-left {
       top: calc(86px + env(safe-area-inset-top));
       left: calc(10px + env(safe-area-inset-left));
@@ -179,9 +157,11 @@
       position: relative;
       backdrop-filter: blur(2px);
 
+      /* NEW */
       display: flex;
       flex-direction: column;
 
+      /* NEW: обмеження по екрану, щоб не обрізало низ */
       max-height: calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     }
     @media (max-width: 720px){
@@ -262,10 +242,12 @@
       padding: 14px 16px 16px;
       background: linear-gradient(to bottom, rgba(45,30,18,.92), rgba(30,20,12,.92));
 
+      /* NEW: тіло займає весь доступний простір і скролиться */
       flex: 1 1 auto;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
 
+      /* NEW: забираємо старі max-height, бо вони й різали ціну */
       max-height: none;
     }
 
@@ -330,6 +312,7 @@
     .stat .label{ font-size: 12px; opacity: .88; margin-bottom: 6px; }
     .stat .value{ font-size: 18px; font-weight: 900; letter-spacing: .2px; }
 
+    /* NEW: ціна липне знизу, щоб її не “з’їдало” */
     .priceRow{
       display:flex;
       align-items:baseline;
@@ -632,10 +615,6 @@
       padding: 12px 14px;
       font-weight: 1000;
       cursor: pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
     }
     .accessBtn{
       border: 1px solid rgba(255,255,255,.14);
@@ -646,61 +625,43 @@
       font-weight: 1000;
       cursor: pointer;
     }
-    .spinner{
-      width: 14px;
-      height: 14px;
-      border-radius: 999px;
-      border: 2px solid rgba(255,255,255,.28);
-      border-top-color: rgba(255,255,255,.9);
-      display:inline-block;
-      animation: spin .8s linear infinite;
-    }
-    @keyframes spin{ to{ transform: rotate(360deg); } }
   </style>
 </head>
 
 <body>
-  <!-- все що треба "ховати" від a11y під час модалки -->
-  <div id="appRoot">
-    <!-- LEFT DRAWER -->
-    <div class="scrim" id="scrim"></div>
-    <aside class="drawer" id="drawer" aria-hidden="true">
-      <div class="drawerHeader">
-        <div class="drawerTitle" id="drawerTitle">Список</div>
-        <button class="drawerClose" id="drawerClose" type="button">×</button>
-      </div>
-      <div class="drawerList" id="drawerList"></div>
-    </aside>
-
-    <!-- TOP BAR -->
-    <div class="topBar">
-      <button class="btn btnSmall" id="listBtn" type="button">☰ Список</button>
-
-      <button class="btn btnSmall" id="toggleBtn" type="button">
-        🐎 Коники
-        <span class="horseDot" id="horseDot" aria-hidden="true"></span>
-      </button>
-
-      <button class="btn btnSmall" id="reloadBtn" type="button">⟳ Оновити</button>
+  <!-- LEFT DRAWER -->
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawerHeader">
+      <div class="drawerTitle" id="drawerTitle">Список</div>
+      <button class="drawerClose" id="drawerClose" type="button">×</button>
     </div>
+    <div class="drawerList" id="drawerList"></div>
+  </aside>
 
-    <!-- FLOATING COORDS BUTTON -->
-    <div class="fab">
-      <button class="btn" id="coordsBtn" type="button">📍 Вимк</button>
-    </div>
-
-    <div id="map"></div>
+  <!-- TOP BAR -->
+  <div class="topBar">
+    <button class="btn btnSmall" id="listBtn" type="button">☰ Список</button>
+    <button class="btn btnSmall" id="toggleBtn" type="button">🐎 Коники</button>
+    <button class="btn btnSmall" id="reloadBtn" type="button">⟳ Оновити</button>
   </div>
+
+  <!-- FLOATING COORDS BUTTON -->
+  <div class="fab">
+    <button class="btn" id="coordsBtn" type="button">📍 Вимк</button>
+  </div>
+
+  <div id="map"></div>
 
   <!-- ACCESS MODAL -->
   <div class="accessModal" id="accessModal" aria-hidden="true">
-    <div class="accessBox" role="dialog" aria-modal="true" aria-labelledby="accessTitle" aria-describedby="accessDesc">
+    <div class="accessBox" role="dialog" aria-modal="true">
       <div class="accessHead">
-        <div class="accessTitle" id="accessTitle">Доступ до “Коників”</div>
-        <button class="accessX" id="accessClose" type="button" aria-label="Закрити">×</button>
+        <div class="accessTitle">Доступ до “Коників”</div>
+        <button class="accessX" id="accessClose" type="button">×</button>
       </div>
 
-      <div class="accessText" id="accessDesc">
+      <div class="accessText">
         Для отримання доступу до розділу <b>“Коники”</b> потрібно <b>100$</b>.<br>
         Зверніться на пошту:
         <span class="accessEmail">ПОШТА_ТУТ</span>
@@ -709,13 +670,10 @@
       <label class="accessLabel" for="accessCode">Код</label>
       <input class="accessInput" id="accessCode" autocomplete="off" inputmode="latin" />
 
-      <div class="accessError" id="accessError" role="status" aria-live="polite">Невірний код.</div>
+      <div class="accessError" id="accessError">Невірний код.</div>
 
       <div class="accessBtns">
-        <button class="accessBtnPrimary" id="accessSubmit" type="button">
-          <span id="accessSpin" class="spinner" aria-hidden="true" style="display:none"></span>
-          <span id="accessSubmitText">Відкрити</span>
-        </button>
+        <button class="accessBtnPrimary" id="accessSubmit" type="button">Відкрити</button>
         <button class="accessBtn" id="accessCancel" type="button">Скасувати</button>
       </div>
     </div>
@@ -731,87 +689,6 @@
     const MAP_URL   = basePath + "map.jpg"   + bust;
     const WAGON_URL = basePath + "wagon.png" + bust;
     const HORSE_URL = basePath + "horse.png" + bust;
-
-    // ===== WORKER (KV codes) =====
-    const WORKER_BASE = "https://shiny-mud-0b7d.yurromanow.workers.dev";
-    const ENDPOINT_VERIFY = "/verify";
-    const ENDPOINT_STATUS = "/status";
-    const HORSES_TOKEN_KEY = "horses_access_token_v1";
-
-    function getToken(){
-      try { return localStorage.getItem(HORSES_TOKEN_KEY) || ""; } catch { return ""; }
-    }
-    function setToken(t){
-      try{
-        if (!t) localStorage.removeItem(HORSES_TOKEN_KEY);
-        else localStorage.setItem(HORSES_TOKEN_KEY, t);
-      } catch {}
-    }
-
-    async function workerFetch(path, opts = {}){
-      const url = WORKER_BASE + path;
-      const headers = new Headers(opts.headers || {});
-      headers.set("Accept", "application/json");
-
-      const token = getToken();
-      if (token) headers.set("Authorization", "Bearer " + token);
-
-      const res = await fetch(url, {
-        ...opts,
-        headers,
-        cache: "no-store",
-        credentials: "omit"
-      });
-
-      let data = null;
-      const ct = (res.headers.get("content-type") || "").toLowerCase();
-      if (ct.includes("application/json")) data = await res.json().catch(() => null);
-      else {
-        const text = await res.text().catch(() => "");
-        data = text ? { raw: text } : null;
-      }
-      return { res, data };
-    }
-
-    async function verifyWithWorker(code){
-      const { res, data } = await workerFetch(ENDPOINT_VERIFY, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code })
-      });
-
-      if (!res.ok){
-        return { ok:false, error: (data && (data.error || data.message)) || ("Помилка Worker ("+res.status+")") };
-      }
-
-      if (data && data.ok === true){
-        return { ok:true, token: data.token || "" };
-      }
-
-      if (data && (data.valid === true || data.allowed === true)){
-        return { ok:true, token: data.token || "" };
-      }
-
-      return { ok:false, error: (data && (data.error || data.message)) || "Невірний код" };
-    }
-
-    async function checkStatusWithWorker(){
-      try{
-        const { res, data } = await workerFetch(ENDPOINT_STATUS, { method: "GET" });
-        if (!res.ok) return { ok:false };
-
-        if (data && (data.ok === true || data.valid === true || data.allowed === true)) return { ok:true };
-        if (data && typeof data.raw === "string" && data.raw.toLowerCase().includes("ok")) return { ok:true };
-
-        return { ok:false };
-      } catch {
-        return { ok:false };
-      }
-    }
-
-    function normalizeCode(s){
-      return String(s || "").trim().toUpperCase().replace(/\s+/g, "");
-    }
 
     // ===== DATA (WAGONS) =====
     function cityById(id){
@@ -929,6 +806,29 @@
       { ids: [37,38,39,40,41,42],         x: 1038, y: 920  },
       { ids: [43,44,45,46,47,48],         x: 1221, y: 763  },
     ];
+
+    // ===== ACCESS (Коники) — НЕ одноразові коди =====
+    const HORSES_UNLOCK_KEY = "horsesUnlocked";
+
+    const HORSES_ACCESS = {
+      codes: new Set([
+        "A7F3K9","B2Q9M4","C8T1X7","D4H6P2","E9N2R8",
+        "F1K7Z3","G6V2S9","H3J8L1","J9C4W6","K2D7Y8",
+        "L5P1A9","M8R6F2","N1S9B4","P7X3C8","Q4L8D1",
+        "R9M2E7","S2N6G9","T8Q1H4","V3R7J2","W6T9K1",
+        "X1V4L7","Y8W2M6","Z5X9N3","AA7D2P9","AB1F8Q4",
+        "AC6G3R7","AD9H1S2","AE2J7T8","AF8K4V1","AG3L9W6",
+        "AH1M6X2","AJ7N2Y9","AK4P8Z5","AL9Q1A7","AM2R7B3",
+        "AN8S4C6","AP3T9D1","AQ1V6E8","AR7W2F4","AS4X8G9",
+        "AT9Y1H6","AV2Z7J3","AW8A4K1","AX3B9L7","AY1C6M2",
+        "AZ7D2N8","BA4F8P1","BB9G1Q6","BC2H7R3","BD8J4S9"
+      ]),
+      unlocked: localStorage.getItem(HORSES_UNLOCK_KEY) === "1",
+    };
+
+    function normalizeCode(s){
+      return String(s || "").trim().toUpperCase().replace(/\s+/g, "");
+    }
 
     // ГРУПИ повозок
     const GROUPS = [
@@ -1081,7 +981,6 @@
     }
 
     // ===== Drawer =====
-    const appRoot = document.getElementById("appRoot");
     const drawer = document.getElementById("drawer");
     const scrim  = document.getElementById("scrim");
     const drawerList = document.getElementById("drawerList");
@@ -1318,114 +1217,6 @@
         marker.on("click", () => openHorseGroupPopup(idx, g.ids[0], 0));
       });
 
-      // ===== Access Modal / Toggle =====
-      const toggleBtn = document.getElementById("toggleBtn");
-      const horseDot = document.getElementById("horseDot");
-
-      const accessModal  = document.getElementById("accessModal");
-      const accessClose  = document.getElementById("accessClose");
-      const accessCancel = document.getElementById("accessCancel");
-      const accessSubmit = document.getElementById("accessSubmit");
-      const accessSubmitText = document.getElementById("accessSubmitText");
-      const accessSpin   = document.getElementById("accessSpin");
-      const accessCode   = document.getElementById("accessCode");
-      const accessError  = document.getElementById("accessError");
-
-      let horsesUnlocked = false;
-      let accessBusy = false;
-
-      function setUnlocked(v){
-        horsesUnlocked = !!v;
-        horseDot.classList.toggle("isHidden", horsesUnlocked); // hidden when unlocked
-      }
-
-      function setAccessBusy(v){
-        accessBusy = !!v;
-        accessSubmit.disabled = accessBusy;
-        accessCancel.disabled = accessBusy;
-        accessClose.disabled = accessBusy;
-        accessCode.disabled = accessBusy;
-        accessSpin.style.display = accessBusy ? "inline-block" : "none";
-        accessSubmitText.textContent = accessBusy ? "Перевіряю..." : "Відкрити";
-      }
-
-      function showAccessModal(){
-        accessError.style.display = "none";
-        accessCode.value = "";
-        accessModal.style.display = "flex";
-        accessModal.setAttribute("aria-hidden", "false");
-
-        // hide main app for a11y
-        appRoot.setAttribute("aria-hidden", "true");
-
-        setAccessBusy(false);
-        setTimeout(() => accessCode.focus(), 50);
-      }
-      function hideAccessModal(){
-        if (accessBusy) return;
-        accessModal.style.display = "none";
-        accessModal.setAttribute("aria-hidden", "true");
-        appRoot.removeAttribute("aria-hidden");
-      }
-      function denyHorsesGoBackToWagons(){
-        currentMode = "wagons";
-        applyMode();
-      }
-
-      accessClose.onclick = () => { hideAccessModal(); denyHorsesGoBackToWagons(); };
-      accessCancel.onclick = () => { hideAccessModal(); denyHorsesGoBackToWagons(); };
-
-      accessCode.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") accessSubmit.click();
-        if (e.key === "Escape") { hideAccessModal(); denyHorsesGoBackToWagons(); }
-      });
-
-      accessModal.addEventListener("click", (e) => {
-        if (e.target === accessModal){
-          hideAccessModal();
-          denyHorsesGoBackToWagons();
-        }
-      });
-
-      accessSubmit.onclick = async () => {
-        if (accessBusy) return;
-
-        const code = normalizeCode(accessCode.value);
-        if (!code){
-          accessError.textContent = "Введи код.";
-          accessError.style.display = "block";
-          accessCode.focus();
-          return;
-        }
-
-        accessError.style.display = "none";
-        setAccessBusy(true);
-
-        try{
-          const out = await verifyWithWorker(code);
-
-          if (!out.ok){
-            accessError.textContent = out.error || "Невірний код.";
-            accessError.style.display = "block";
-            setAccessBusy(false);
-            return;
-          }
-
-          if (out.token){
-            setToken(out.token);
-          }
-
-          setUnlocked(true);
-          hideAccessModal();
-          applyMode();
-        } catch {
-          accessError.textContent = "Помилка перевірки. Спробуй ще раз.";
-          accessError.style.display = "block";
-        } finally {
-          setAccessBusy(false);
-        }
-      };
-
       // ===== Drawer render =====
       function renderDrawer(){
         if (currentMode === "wagons"){
@@ -1473,7 +1264,7 @@
               map.panTo([g.y, g.x], { animate: true, duration: 0.35 });
               setTimeout(() => openWagonGroupPopup(groupIndex, id, 0), 220);
             } else {
-              if (!horsesUnlocked){
+              if (!HORSES_ACCESS.unlocked){
                 showAccessModal();
                 return;
               }
@@ -1487,10 +1278,60 @@
         });
       }
 
+      const toggleBtn = document.getElementById("toggleBtn");
+
+      const accessModal  = document.getElementById("accessModal");
+      const accessClose  = document.getElementById("accessClose");
+      const accessCancel = document.getElementById("accessCancel");
+      const accessSubmit = document.getElementById("accessSubmit");
+      const accessCode   = document.getElementById("accessCode");
+      const accessError  = document.getElementById("accessError");
+
+      function showAccessModal(){
+        accessError.style.display = "none";
+        accessCode.value = "";
+        accessModal.style.display = "flex";
+        setTimeout(() => accessCode.focus(), 50);
+      }
+      function hideAccessModal(){
+        accessModal.style.display = "none";
+      }
+      function denyHorsesGoBackToWagons(){
+        currentMode = "wagons";
+        applyMode();
+      }
+
+      accessClose.onclick = () => { hideAccessModal(); denyHorsesGoBackToWagons(); };
+      accessCancel.onclick = () => { hideAccessModal(); denyHorsesGoBackToWagons(); };
+
+      accessCode.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") accessSubmit.click();
+      });
+
+      // НЕ одноразові коди: тільки перевірка чи є в списку
+      accessSubmit.onclick = () => {
+        const code = normalizeCode(accessCode.value);
+        if (HORSES_ACCESS.codes.has(code)){
+          HORSES_ACCESS.unlocked = true;
+          localStorage.setItem(HORSES_UNLOCK_KEY, "1");
+          hideAccessModal();
+          applyMode();
+        } else {
+          accessError.style.display = "block";
+        }
+      };
+
+      accessModal.addEventListener("click", (e) => {
+        if (e.target === accessModal){
+          hideAccessModal();
+          denyHorsesGoBackToWagons();
+        }
+      });
+
       function applyMode(){
         map.closePopup();
 
-        if (currentMode === "horses" && !horsesUnlocked){
+        if (currentMode === "horses" && !HORSES_ACCESS.unlocked){
           showAccessModal();
           return;
         }
@@ -1498,10 +1339,11 @@
         if (currentMode === "wagons"){
           if (map.hasLayer(horsesLayer)) map.removeLayer(horsesLayer);
           if (!map.hasLayer(wagonsLayer)) wagonsLayer.addTo(map);
-          // text of first child stays; we don't touch your emoji order here
+          toggleBtn.textContent = "🐎 Коники";
         } else {
           if (map.hasLayer(wagonsLayer)) map.removeLayer(wagonsLayer);
           if (!map.hasLayer(horsesLayer)) horsesLayer.addTo(map);
+          toggleBtn.textContent = "🛒 Повозки";
         }
 
         renderDrawer();
@@ -1511,25 +1353,6 @@
         currentMode = (currentMode === "wagons") ? "horses" : "wagons";
         applyMode();
       };
-
-      // ===== INIT access state from token =====
-      (async function initAccess(){
-        setUnlocked(false); // locked => red blink visible
-
-        const token = getToken();
-        if (!token){
-          setUnlocked(false);
-          return;
-        }
-
-        const st = await checkStatusWithWorker();
-        if (st.ok){
-          setUnlocked(true);
-        } else {
-          setToken("");
-          setUnlocked(false);
-        }
-      })();
 
       applyMode();
 
