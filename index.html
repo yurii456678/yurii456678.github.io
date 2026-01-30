@@ -954,7 +954,7 @@
           <div class="rdrBody">
             <div class="titleRow">
               <div class="name">${esc(h.title || `Кінь - ${h.id}`)}</div>
-              <div class="idPill">H#${h.id}</div>
+              <div class="idPill">#${h.id}</div>
             </div>
 
             <div class="horseNameBig">${esc((h.fullName || "").toUpperCase())}</div>
@@ -1203,7 +1203,7 @@
       HORSE_GROUPS.forEach((g, idx) => {
         const icon = L.divIcon({
           className: "",
-          html: markerHtml(`H${groupLabel(g.ids)}`, HORSE_URL),
+          html: markerHtml(groupLabel(g.ids), HORSE_URL),
           iconSize: [44, 44],
           iconAnchor: [0, 0]
         });
@@ -1237,7 +1237,7 @@
             .map(h => `
               <div class="wagonRow" data-type="horse" data-id="${h.id}">
                 <div class="wagonLeft">
-                  <div class="wagonMain">H#${h.id} — ${esc(h.fullName || "Кінь")}</div>
+                  <div class="wagonMain">#${h.id} — ${esc(h.fullName || "Кінь")}</div>
                   <div class="wagonSub">${esc(h.breed || "")}</div>
                 </div>
                 <div class="pricePill">${fmtPriceDot(h.price)} $</div>
